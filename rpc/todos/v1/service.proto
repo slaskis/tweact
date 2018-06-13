@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package todos.v1;
+
+option go_package = "todos";
+
+service TodoService {
+  rpc CreateTodo (CreateTodoRequest) returns (TodoResponse);
+  rpc RemoveTodo (RemoveTodoRequest) returns (TodoResponse);
+  rpc GetTodo (GetTodoRequest) returns (TodoResponse);
+  rpc ListTodos (ListTodosRequest) returns (ListTodoResponse);
+}
+
+enum TodoState {
+  UNKNOWN = 0;
+  ARCHIVED = 1;
+  ACTIVE = 2;
+}
+
+message Todo {
+  string id = 1;
+  string title = 2;
+  TodoState state = 3;
+}
+
+message TodoResponse {
+  Todo todo = 1;
+}
+
+message ListTodoResponse {
+  repeated Todo todos = 1;
+}
+
+message CreateTodoRequest {
+  string title = 1;
+}
+
+message RemoveTodoRequest {
+  string id = 1;
+}
+
+message GetTodoRequest {
+  string id = 1;
+}
+
+message ListTodosRequest {
+
+}
