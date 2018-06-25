@@ -4,7 +4,7 @@ import Head from "../components/head";
 import Nav from "../components/nav";
 
 import {
-  TwirpJSONClient,
+  TwirpClient,
   TwirpContext,
   ListTodoService,
   CreateTodoService
@@ -15,7 +15,7 @@ export default () => (
     <Head title="Home" />
     <Nav />
     <TwirpContext.Provider
-      value={{ client: new TwirpJSONClient("http://localhost:4000/twirp/") }}
+      value={{ client: new TwirpClient("http://localhost:4000/twirp/") }}
     >
       <ListTodoService
         render={({ data: { todos }, error, loading }) =>
@@ -32,12 +32,23 @@ export default () => (
       />
 
       <CreateTodoService
-        twirp={{ client: new TwirpJSONClient("http://localhost:4000/twirp/") }}
+        twirp={{ client: new TwirpClient("http://localhost:4000/twirp/") }}
         render={(save, { data: { todo }, error, loading }) => (
-          <form onSubmit={e => e.preventDefault() || save()}>
+          <form
+            onSubmit={evt => {
+              evt.preventDefault();
+              const title = evt.currentTarget.elements[0] as HTMLInputElement;
+              if (title) {
+                save({
+                  title: title.value
+                });
+              }
+            }}
+          >
             <input name="title" placeholder="Title of Todo" defaultValue="" />
-            <button disabled={error === undefined || loading}>Create</button>
+            <button disabled={loading}>Create</button>
             {todo ? "Created a todo with id " + todo.id : null}
+            {error ? error.message : null}
           </form>
         )}
       />

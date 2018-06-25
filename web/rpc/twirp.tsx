@@ -12,6 +12,7 @@ export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
     variables: Req,
     options: { headers?: object } = {}
   ) {
+    console.log(variables, options);
     const req = new Request(this.prefix + method, {
       method: "POST",
       headers: new Headers({
@@ -21,15 +22,41 @@ export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
       }),
       body: JSON.stringify(variables)
     });
-    return fetch(req).then(res => res.json());
+    return fetch(req).then(res =>
+      res.json().then(body => {
+        if (res.ok) {
+          return body;
+        }
+        throw new TwirpError(res.status, body);
+      })
+    );
   }
 }
 
 interface TwirpClient<Req, Res> {
   request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
 }
+type TwirpErrorMeta = {
+  [k: string]: string;
+};
+type TwirpErrorObject = {
+  code: string;
+  msg: string;
+  meta: TwirpErrorMeta;
+};
 
-interface TwirpError extends Error {}
+class TwirpError extends Error {
+  status: Number;
+  code: string;
+  meta: TwirpErrorMeta;
+
+  constructor(status: Number, error: TwirpErrorObject) {
+    super(error.msg);
+    this.status = status;
+    this.code = error.code;
+    this.meta = error.meta;
+  }
+}
 
 interface TwirpServiceRender<T> {
   data: T | Partial<T>;
@@ -38,8 +65,10 @@ interface TwirpServiceRender<T> {
 
   // TODO refetch, invalidate?
 }
-type ReadRenderCallback<Res> = (_: TwirpServiceRender<Res>) => JSX.Element;
-type WriteRenderCallback<Req, Res> = (
+export type ReadRenderCallback<Res> = (
+  _: TwirpServiceRender<Res>
+) => JSX.Element;
+export type WriteRenderCallback<Req, Res> = (
   write: (variables?: Partial<Req>) => Promise<Res | undefined>,
   _: TwirpServiceRender<Res>
 ) => JSX.Element;
@@ -75,7 +104,9 @@ interface TwirpServiceProps<Req, Res, Render> {
   children?: Render;
 }
 
-export const withTwirp = (Component: React.ComponentType) => (props: any) => (
+export const withTwirp = <Req, Res, Render>(
+  Component: React.ComponentType<TwirpServiceProps<Req, Res, Render>>
+) => (props: TwirpServiceProps<Req, Res, Render>) => (
   <TwirpContext.Consumer>
     {twirp => <Component twirp={twirp} {...props} />}
   </TwirpContext.Consumer>
@@ -88,7 +119,9 @@ interface TwirpClientContext<Req, Res> {
   waitFor?: TwirpWaiter<Res>;
 }
 
-export const TwirpContext = React.createContext({});
+export const TwirpContext = React.createContext<TwirpClientContext<any, any>>(
+  {}
+);
 
 abstract class TwirpService<Req, Res, Render> extends React.Component<
   TwirpServiceProps<Req, Res, Render>,
@@ -103,12 +136,10 @@ abstract class TwirpService<Req, Res, Render> extends React.Component<
   };
 
   async request(vars?: Partial<Req>): Promise<Res | undefined> {
-    if (typeof vars == "undefined") {
-      vars = this.props.variables;
-    }
     const { client = null } = this.props.twirp || {};
 
     if (!client) {
+      console.log(this.props);
       throw new Error("missing twirp client");
     }
 
@@ -117,17 +148,17 @@ abstract class TwirpService<Req, Res, Render> extends React.Component<
       this.setState({
         loading: true
       });
+      console.log("req", variables);
       const data = await client.request(this.method, variables, {});
       this.setState({
-        data
+        data,
+        error: undefined,
+        loading: false
       });
       return data;
     } catch (error) {
       this.setState({
-        error
-      });
-    } finally {
-      this.setState({
+        error,
         loading: false
       });
     }
@@ -139,7 +170,13 @@ export abstract class WriteTwirpService<Req, Res> extends TwirpService<
   Res,
   WriteRenderCallback<Req, Res>
 > {
-  render(): React.ReactNode {
+  state: TwirpServiceRender<Res> = {
+    data: {},
+    error: undefined,
+    loading: false
+  };
+
+  render() {
     if (this.props.fail && this.state.error) {
       throw this.state.error;
     }
@@ -150,7 +187,7 @@ export abstract class WriteTwirpService<Req, Res> extends TwirpService<
     if (!render) {
       return null;
     }
-    return render(this.request, this.state);
+    return render(this.request.bind(this), this.state);
   }
 }
 
@@ -173,7 +210,7 @@ export abstract class ReadTwirpService<Req, Res> extends TwirpService<
     this.request(this.props.variables);
   }
 
-  render(): React.ReactNode {
+  render() {
     if (this.props.fail && this.state.error) {
       throw this.state.error;
     }
