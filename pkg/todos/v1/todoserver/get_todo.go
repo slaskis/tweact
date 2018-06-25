@@ -8,7 +8,7 @@ import (
 	todos "github.com/slaskis/tweact/pkg/todos/v1"
 )
 
-func (s TodoServer) GetTodo(ctx context.Context, in *todos.GetTodoRequest) (*todos.TodoResponse, error) {
+func (s *TodoServer) GetTodo(ctx context.Context, in *todos.GetTodoRequest) (*todos.TodoResponse, error) {
 	for _, t := range s.todos {
 		if t.Id == in.Id {
 			return &todos.TodoResponse{

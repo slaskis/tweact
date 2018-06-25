@@ -8,7 +8,7 @@ import (
 	todos "github.com/slaskis/tweact/pkg/todos/v1"
 )
 
-func (s TodoServer) RemoveTodo(ctx context.Context, in *todos.RemoveTodoRequest) (*todos.TodoResponse, error) {
+func (s *TodoServer) RemoveTodo(ctx context.Context, in *todos.RemoveTodoRequest) (*todos.TodoResponse, error) {
 	var newTodos []*todos.Todo
 	var todo *todos.Todo
 	for _, t := range s.todos {

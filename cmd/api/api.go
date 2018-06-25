@@ -11,7 +11,7 @@ import (
 
 func main() {
 	tsvc := todoserver.TodoServer{}
-	tsrv := todos.NewTodoServiceServer(tsvc, nil)
+	tsrv := todos.NewTodoServiceServer(&tsvc, nil)
 	mux := http.ServeMux{}
 	mux.Handle("/", tsrv)
 	log.Printf("listening on port 4000, available services:")
