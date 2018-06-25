@@ -49,12 +49,14 @@ class TwirpError extends Error {
   status: Number;
   code: string;
   meta: TwirpErrorMeta;
+  message: string;
 
   constructor(status: Number, error: TwirpErrorObject) {
     super(error.msg);
     this.status = status;
     this.code = error.code;
     this.meta = error.meta;
+    this.message = error.msg;
   }
 }
 
