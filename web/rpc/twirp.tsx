@@ -1,40 +1,113 @@
 import React, { Children } from "react";
+import fetch from "isomorphic-fetch";
+
+interface TwirpCache<Key, Res> {
+  get(key: Key): Promise<Res>;
+  set(key: Key, res: Res): Promise<void>;
+  delete(key: Key): Promise<void>;
+  purge(): Promise<void>;
+  dump(): Promise<Iterable<[Key, Res]>>;
+  load(it: Iterable<[Key, Res]>): Promise<void>;
+}
+
+export class InMemoryCache<Res> implements TwirpCache<string, Res | undefined> {
+  store = new Map<string, Res>();
+
+  async get(key: string) {
+    return this.store.get(key);
+  }
+  async set(key: string, res: Res) {
+    this.store.set(key, res);
+  }
+  async delete(key: string) {
+    this.store.delete(key);
+  }
+  async purge() {
+    this.store.clear();
+  }
+  async dump() {
+    return this.store.entries();
+  }
+  async load(obj: Iterable<any>) {
+    this.store = new Map(obj);
+  }
+}
+
+class TwirpRequest<Res> {
+  cache: TwirpCache<string, Res>;
+  loading: boolean = false;
+  request: { url: string } & RequestInit;
+
+  constructor(
+    cache: TwirpCache<string, Res>,
+    request: { url: string } & RequestInit
+  ) {
+    this.cache = cache;
+    this.request = request;
+  }
+
+  async send(): Promise<Res> {
+    const key = JSON.stringify(this.request);
+    const cached = await this.cache.get(key);
+    console.log("twirp request, cached? %s", cached, key, this.cache);
+    if (cached) {
+      return cached;
+    }
+    try {
+      this.loading = true;
+      const res = await fetch(this.request.url, this.request);
+      const body = await res.json();
+      if (!res.ok) {
+        throw new TwirpError(res.status, body);
+      }
+      await this.cache.set(key, body as Res);
+      console.log("requested", body);
+      return body as Res;
+    } catch (err) {
+      console.log("request error", err);
+      throw err;
+    } finally {
+      this.loading = false;
+    }
+  }
+}
 
 export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
   prefix: string;
+  cache: TwirpCache<string, Res>;
+  id?: number;
 
-  constructor(prefix: string) {
+  constructor(prefix: string, cache: TwirpCache<string, Res>) {
+    this.id = Math.random();
     this.prefix = prefix;
+    this.cache = cache;
   }
 
-  async request(
+  request(
     method: string,
     variables: Req,
     options: { headers?: object } = {}
-  ) {
-    console.log(variables, options);
-    const req = new Request(this.prefix + method, {
+  ): TwirpRequest<Res> {
+    return new TwirpRequest(this.cache, {
+      url: this.prefix + method,
       method: "POST",
-      headers: new Headers({
+      headers: {
         ...options.headers,
         Accept: "application/json",
         "Content-Type": "application/json"
-      }),
+      },
       body: JSON.stringify(variables)
     });
-    return fetch(req).then(res =>
-      res.json().then(body => {
-        if (res.ok) {
-          return body;
-        }
-        throw new TwirpError(res.status, body);
-      })
-    );
   }
 }
 
 interface TwirpClient<Req, Res> {
-  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
+  cache: TwirpCache<string, Res>;
+  request(
+    method: string,
+    variables: Partial<Req>,
+    options: any
+  ): TwirpRequest<Res>;
 }
 type TwirpErrorMeta = {
   [k: string]: string;
@@ -60,24 +133,20 @@ class TwirpError extends Error {
   }
 }
 
-interface TwirpServiceRender<T> {
+interface TwirpServiceState<T> {
   data: T | Partial<T>;
   error?: TwirpError;
   loading: boolean;
-
-  // TODO refetch, invalidate?
+  skipped: boolean;
 }
-export type ReadRenderCallback<Res> = (
-  _: TwirpServiceRender<Res>
-) => JSX.Element;
-export type WriteRenderCallback<Req, Res> = (
-  write: (variables?: Partial<Req>) => Promise<Res | undefined>,
-  _: TwirpServiceRender<Res>
-) => JSX.Element;
-
+interface TwirpServiceMethods<Req, Res> {
+  // TODO invalidate?
+  update: (variables?: Partial<Req>) => Promise<Res | undefined>;
+  client?: TwirpClient<Req, Res>;
+}
 type SkipFunc<V> = (vars: V) => boolean;
 
-interface TwirpServiceProps<Req, Res, Render> {
+interface TwirpServiceProps<Req, Res> {
   variables?: Partial<Req>;
 
   // Wait for loading to complete before rendering anything instead of
@@ -102,60 +171,122 @@ interface TwirpServiceProps<Req, Res, Render> {
   twirp?: TwirpClientContext<Req, Res>;
 
   // Render prop
-  render?: Render;
-  children?: Render;
+  render?(
+    _: TwirpServiceState<Res> & TwirpServiceMethods<Req, Res>
+  ): React.ReactNode;
+  children?(
+    _: TwirpServiceState<Res> & TwirpServiceMethods<Req, Res>
+  ): React.ReactNode;
 }
 
-export const withTwirp = <Req, Res, Render>(
-  Component: React.ComponentType<TwirpServiceProps<Req, Res, Render>>
-) => (props: TwirpServiceProps<Req, Res, Render>) => (
-  <TwirpContext.Consumer>
-    {twirp => <Component twirp={twirp} {...props} />}
-  </TwirpContext.Consumer>
-);
-
-type TwirpWaiter<Req> = (request: Promise<Req | undefined>) => void;
+export const withTwirp = <Req, Res>(
+  Component: React.ComponentClass<TwirpServiceProps<Req, Res>>
+) => {
+  const WithTwirp: React.StatelessComponent<
+    TwirpServiceProps<Req, Res>
+  > = props => (
+    <TwirpContext.Consumer>
+      {twirp => <Component twirp={{ ...twirp, ...props.twirp }} {...props} />}
+    </TwirpContext.Consumer>
+  );
+  WithTwirp.displayName = `withTwirp(${Component.displayName ||
+    Component.name ||
+    "<unnamed>"})`;
+  return WithTwirp;
+};
 
 interface TwirpClientContext<Req, Res> {
   client?: TwirpClient<Req, Res>;
-  waitFor?: TwirpWaiter<Res>;
+  method?: string;
+  queue?: TwirpRequest<Res>[];
 }
 
-export const TwirpContext = React.createContext<TwirpClientContext<any, any>>(
-  {}
+const TwirpContext = React.createContext<TwirpClientContext<any, any>>({});
+
+export const TwirpProvider = ({
+  value,
+  children
+}: {
+  value: TwirpClientContext<any, any>;
+  children: React.ReactNode;
+}) => (
+  <TwirpContext.Consumer>
+    {(parent = {}) => (
+      <TwirpContext.Provider
+        value={{
+          client: value.client || parent.client,
+          queue: parent.queue
+        }}
+        children={children}
+      />
+    )}
+  </TwirpContext.Consumer>
 );
 
-abstract class TwirpService<Req, Res, Render> extends React.Component<
-  TwirpServiceProps<Req, Res, Render>,
-  TwirpServiceRender<Res>
+export abstract class TwirpService<Req, Res> extends React.Component<
+  TwirpServiceProps<Req, Res>,
+  TwirpServiceState<Res>
 > {
-  abstract method: string;
-
-  state: TwirpServiceRender<Res> = {
+  state: TwirpServiceState<Res> = {
     data: {},
     error: undefined,
-    loading: this.props.lazy != true
+    loading: this.props.lazy != true,
+    skipped: false
   };
 
-  async request(vars?: Partial<Req>): Promise<Res | undefined> {
+  method: string;
+
+  constructor(method: string, props: TwirpServiceProps<Req, Res>) {
+    super(props);
+
+    this.method = method;
+
+    // queue a request
+    const { twirp } = this.props;
+    if (!props.lazy && twirp && twirp.client && twirp.queue) {
+      twirp.queue.push(twirp.client.request(method, props.variables || {}, {}));
+    }
+  }
+
+  componentDidMount() {
+    if (!this.props.lazy) {
+      this.request(this.props.variables);
+    }
+  }
+
+  get skipped() {
+    if (typeof this.props.skip == "function") {
+      return this.props.skip(this.props.variables || {});
+    }
+    return this.props.skip == true;
+  }
+
+  request = async (vars?: Partial<Req>): Promise<Res | undefined> => {
     const { client = null } = this.props.twirp || {};
 
     if (!client) {
-      console.log(this.props);
       throw new Error("missing twirp client");
+    }
+
+    if (this.skipped) {
+      this.setState({
+        skipped: true
+      });
+      return;
     }
 
     try {
       const variables = Object.assign({}, this.props.variables, vars);
       this.setState({
-        loading: true
+        loading: true,
+        skipped: false
       });
-      console.log("req", variables);
-      const data = await client.request(this.method, variables, {});
+      const req = client.request(this.method, variables, {});
+      const data = await req.send();
       this.setState({
         data,
         error: undefined,
-        loading: false
+        loading: req.loading
       });
       return data;
     } catch (error) {
@@ -164,18 +295,6 @@ abstract class TwirpService<Req, Res, Render> extends React.Component<
         loading: false
       });
     }
-  }
-}
-
-export abstract class WriteTwirpService<Req, Res> extends TwirpService<
-  Req,
-  Res,
-  WriteRenderCallback<Req, Res>
-> {
-  state: TwirpServiceRender<Res> = {
-    data: {},
-    error: undefined,
-    loading: false
   };
 
   render() {
@@ -189,41 +308,11 @@ export abstract class WriteTwirpService<Req, Res> extends TwirpService<
     if (!render) {
       return null;
     }
-    return render(this.request.bind(this), this.state);
-  }
-}
-
-export abstract class ReadTwirpService<Req, Res> extends TwirpService<
-  Req,
-  Res,
-  ReadRenderCallback<Res>
-> {
-  constructor(props: TwirpServiceProps<Req, Res, ReadRenderCallback<Res>>) {
-    super(props);
-
-    // queue a request and add to the context
-    if (props.twirp && props.twirp.waitFor) {
-      const req = this.request(props.variables);
-      props.twirp.waitFor(req);
-    }
-  }
-
-  componentDidMount() {
-    this.request(this.props.variables);
-  }
-
-  render() {
-    if (this.props.fail && this.state.error) {
-      throw this.state.error;
-    }
-    if (this.props.wait && this.state.loading) {
-      return null;
-    }
-    const render = this.props.render || this.props.children;
-    if (!render) {
-      return null;
-    }
-    return render(this.state);
+    return render({
+      ...this.state,
+      update: this.request,
+      client: this.props.twirp ? this.props.twirp.client : undefined
+    });
   }
 }
 
@@ -237,26 +326,31 @@ export abstract class ReadTwirpService<Req, Res> extends TwirpService<
 export const renderState = (
   client: TwirpClient<any, any>,
   component: React.ReactNode,
-  { maxDepth = Infinity } = {}
+  { maxDepth = 3 } = {}
 ) => {
-  const render = (depth = 0): Promise<void> => {
+  const render = async (depth = 0): Promise<void> => {
     if (depth < maxDepth) {
-      const queue: Array<Promise<void>> = [];
-      const waitFor = (req: Promise<void>) => queue.push(req);
+      console.log(" ==== RENDERING TREE %d ==== ", depth);
+      const queue: TwirpRequest<any>[] = [];
       renderElement(
-        <TwirpContext.Provider value={{ client, waitFor }}>
+        <TwirpContext.Provider value={{ client, queue }}>
           {component}
         </TwirpContext.Provider>
       );
-      if (queue.length) {
-        return (
-          // wait for results then try to go
-          // deeper if we succeed
-          Promise.all(queue).then(() => render(depth + 1))
-        );
+      console.log(" ==== DONE RENDERING %d ==== ", depth);
+      console.log(" - %s queued", queue.length);
+      const pending = queue
+        .map(req => ({ req, res: req.send() }))
+        .filter(({ req }) => req.loading)
+        .map(({ res }) => res);
+      console.log(" - %s pending", pending.length);
+      if (pending.length) {
+        // wait for results then try to go
+        // deeper if we succeed
+        await Promise.all(pending);
+        render(depth + 1);
       }
     }
-    return Promise.resolve();
   };
   return render();
 };
@@ -264,24 +358,54 @@ export const renderState = (
 // renderElement is a very simple way to render a React element tree
 // without any magic. Since we keep track using the context we only
 // need the lifecycle method anyway.
-function renderElement(element: any, context = {}) {
+function renderElement(element: any, context = {}, tab = "") {
+  // console.log(
+  //   element.type,
+  //   typeof element.type,
+  //   element.type && element.type._context,
+  //   element.type && element.type.Consumer
+  // );
   if (
     typeof element == "string" ||
     typeof element == "number" ||
     typeof element == "boolean"
   ) {
     // ignore basic elements
+    console.log(tab + "basic element", element);
   } else if (Array.isArray(element)) {
     // react 16 array of children
-    element.forEach(c => c && renderElement(c, context));
-  } else if (typeof element.type == "function") {
+    console.log(tab + "array element");
+    element.forEach(c => c && renderElement(c, context, tab + "  "));
+  } else if (typeof element.type != "string" && element.type) {
     // stateless component or class
     let child;
     let childContext = context;
     const Component = element.type;
     const props = Object.assign({}, Component.defaultProps, element.props);
-
-    if (Component.prototype && Component.prototype.isReactComponent) {
+    if (Component._context) {
+      console.log(
+        tab + "context provider",
+        Component.displayName || Component.name || "<unnamed>",
+        props.value
+      );
+      // react 16 context provider
+      // console.log("provider", Component._context, props.value);
+      Component._context._currentValue = props.value;
+      child = props.children;
+    } else if (Component.Consumer) {
+      console.log(
+        tab + "context consumer",
+        Component.displayName || Component.name || "<unnamed>",
+        Component._currentValue
+      );
+      // react 16 context consumer
+      // console.log("consumer", Component.Consumer);
+      child = props.children(Component._currentValue);
+    } else if (Component.prototype && Component.prototype.isReactComponent) {
+      console.log(
+        tab + "class component",
+        Component.displayName || Component.name || "<unnamed>"
+      );
       // react class
       const instance = new Component(props, context);
       instance.props = instance.props || props;
@@ -300,17 +424,25 @@ function renderElement(element: any, context = {}) {
         childContext = Object.assign({}, context, instance.getChildContext());
       }
       child = instance.render();
-    } else {
+    } else if (typeof Component == "function") {
+      console.log(
+        tab + "stateless component",
+        Component.displayName || Component.name || "<unnamed>"
+      );
       // stateless function
       child = Component(props, context);
+    } else {
+      console.warn(tab + "unknown component?", Component);
     }
 
-    Array.of(child).forEach(c => c && renderElement(c, childContext));
+    Array.of(child).forEach(
+      c => c && renderElement(c, childContext, tab + "  ")
+    );
   } else if (element.props && element.props.children) {
     // an element with children
     Children.forEach(
       element.props.children,
-      c => c && renderElement(c, context)
+      c => c && renderElement(c, context, tab + "  ")
     );
   }
 }

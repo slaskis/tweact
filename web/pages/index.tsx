@@ -1,135 +1,86 @@
 import React from "react";
-import Link from "next/link";
 import Head from "../components/head";
 import Nav from "../components/nav";
 
 import {
+  renderState,
   TwirpClient,
-  TwirpContext,
-  ListTodoService,
-  CreateTodoService
+  TwirpProvider,
+  InMemoryCache,
+  ListTodos,
+  CreateTodo
 } from "../rpc/TodoService";
 
-export default () => (
-  <div>
-    <Head title="Home" />
-    <Nav />
-    <TwirpContext.Provider
-      value={{ client: new TwirpClient("http://localhost:4000/twirp/") }}
-    >
-      <ListTodoService
-        render={({ data: { todos }, error, loading }) =>
-          loading ? (
-            <span>Loading...</span>
-          ) : error ? (
-            <span>Error: {error.message}</span>
-          ) : todos && todos.length ? (
-            <ul>{todos.map(t => <li key={t.id}>{t.title}</li>)}</ul>
-          ) : (
-            <span>No todos available</span>
-          )
-        }
-      />
+const prefix = "http://localhost:4000/twirp/";
 
-      <CreateTodoService
-        twirp={{ client: new TwirpClient("http://localhost:4000/twirp/") }}
-        render={(save, { data: { todo }, error, loading }) => (
-          <form
-            onSubmit={evt => {
-              evt.preventDefault();
-              const title = evt.currentTarget.elements[0] as HTMLInputElement;
-              if (title) {
-                save({
-                  title: title.value
-                });
-              }
-            }}
-          >
-            <input name="title" placeholder="Title of Todo" defaultValue="" />
-            <button disabled={loading}>Create</button>
-            {todo ? "Created a todo with id " + todo.id : null}
-            {error ? error.message : null}
-          </form>
-        )}
-      />
-    </TwirpContext.Provider>
+type Props = {
+  cache?: Iterable<any>;
+};
 
-    <div className="hero">
-      <h1 className="title">Welcome to Nextz!</h1>
-      <p className="description">
-        To get started, edit <code>pages/index.js</code> and save to reload.
-      </p>
+export default class App extends React.Component<Props> {
+  static async getInitialProps({}) {
+    const cache = new InMemoryCache();
+    const client = new TwirpClient(prefix, cache);
+    try {
+      await renderState(client, <App />);
+    } catch (err) {
+      console.error("renderState err", err);
+    }
+    return { cache: await cache.dump() };
+  }
 
-      <div className="row">
-        <Link href="https://github.com/zeit/next.js#getting-started">
-          <a className="card">
-            <h3>Getting Started &rarr;</h3>
-            <p>Learn more about Next on Github and in their examples</p>
-          </a>
-        </Link>
-        <Link href="https://open.segment.com/create-next-app">
-          <a className="card">
-            <h3>Examples &rarr;</h3>
-            <p>
-              Find other example boilerplates on the{" "}
-              <code>create-next-app</code> site
-            </p>
-          </a>
-        </Link>
-        <Link href="https://github.com/segmentio/create-next-app">
-          <a className="card">
-            <h3>Create Next App &rarr;</h3>
-            <p>Was this tool helpful? Let us know how we can improve it</p>
-          </a>
-        </Link>
+  render() {
+    const cache = new InMemoryCache();
+    if (this.props.cache) {
+      cache.load(this.props.cache);
+    }
+    console.log("App render", cache);
+    return (
+      <div>
+        <Head title="Home" />
+        <Nav />
+        <TwirpProvider value={{ client: new TwirpClient(prefix, cache) }}>
+          <ListTodos
+            render={({ data: { todos }, error, loading }) =>
+              loading ? (
+                "Loading..."
+              ) : error ? (
+                <span>Error: {error.message}</span>
+              ) : todos && todos.length ? (
+                <ul>{todos.map(t => <li key={t.id}>{t.title}</li>)}</ul>
+              ) : (
+                <span>No todos available</span>
+              )
+            }
+          />
+
+          <CreateTodo lazy>
+            {({ data: { todo }, error, loading, update }) => (
+              <form
+                onSubmit={evt => {
+                  evt.preventDefault();
+                  const title = evt.currentTarget
+                    .elements[0] as HTMLInputElement;
+                  if (title) {
+                    update({
+                      title: title.value
+                    });
+                  }
+                }}
+              >
+                <input
+                  name="title"
+                  placeholder="Title of Todo"
+                  defaultValue=""
+                />
+                <button disabled={loading}>Create</button>
+                {todo ? "Created a todo with id " + todo.id : null}
+                {error ? error.message : null}
+              </form>
+            )}
+          </CreateTodo>
+        </TwirpProvider>
       </div>
-    </div>
-
-    <style jsx>{`
-      .hero {
-        width: 100%;
-        color: #333;
-      }
-      .title {
-        margin: 0;
-        width: 100%;
-        padding-top: 80px;
-        line-height: 1.15;
-        font-size: 48px;
-      }
-      .title,
-      .description {
-        text-align: center;
-      }
-      .row {
-        max-width: 880px;
-        margin: 80px auto 40px;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-      }
-      .card {
-        padding: 18px 18px 24px;
-        width: 220px;
-        text-align: left;
-        text-decoration: none;
-        color: #434343;
-        border: 1px solid #9b9b9b;
-      }
-      .card:hover {
-        border-color: #067df7;
-      }
-      .card h3 {
-        margin: 0;
-        color: #067df7;
-        font-size: 18px;
-      }
-      .card p {
-        margin: 0;
-        padding: 12px 0 0;
-        font-size: 13px;
-        color: #333;
-      }
-    `}</style>
-  </div>
-);
+    );
+  }
+}

@@ -1,13 +1,12 @@
-import {
-  ReadTwirpService,
-  WriteTwirpService,
-  withTwirp,
-  ReadRenderCallback,
-  WriteRenderCallback
-} from "./twirp";
+import { withTwirp, TwirpService } from "./twirp";
 
 // TODO don't export these, instead use a separate import (twirp/json, twirp/protobuf)
-export { TwirpJSONClient as TwirpClient, TwirpContext } from "./twirp";
+export {
+  TwirpJSONClient as TwirpClient,
+  TwirpProvider,
+  InMemoryCache,
+  renderState
+} from "./twirp";
 
 export interface Todo {
   id: string;
@@ -27,28 +26,18 @@ export interface ListTodoResponse {
   todos?: Todo[];
 }
 
-export const ListTodoService = withTwirp<
-  ListTodoRequest,
-  ListTodoResponse,
-  ReadRenderCallback<ListTodoResponse>
->(
-  class ListTodoService extends ReadTwirpService<
-    ListTodoRequest,
-    ListTodoResponse
-  > {
-    method = "todos.v1.TodoService/ListTodos";
+export const ListTodos = withTwirp<ListTodoRequest, ListTodoResponse>(
+  class ListTodos extends TwirpService<ListTodoRequest, ListTodoResponse> {
+    constructor(props: any) {
+      super("todos.v1.TodoService/ListTodos", props);
+    }
   }
 );
 
-export const CreateTodoService = withTwirp<
-  CreateTodoRequest,
-  TodoResponse,
-  WriteRenderCallback<CreateTodoRequest, TodoResponse>
->(
-  class CreateTodoService extends WriteTwirpService<
-    CreateTodoRequest,
-    TodoResponse
-  > {
-    method = "todos.v1.TodoService/CreateTodo";
+export const CreateTodo = withTwirp<CreateTodoRequest, TodoResponse>(
+  class CreateTodo extends TwirpService<CreateTodoRequest, TodoResponse> {
+    constructor(props: any) {
+      super("todos.v1.TodoService/CreateTodo", props);
+    }
   }
 );
