@@ -1,4 +1,5 @@
 import React from "react";
+import { NextContext } from "next";
 import Head from "../components/head";
 import Nav from "../components/nav";
 
@@ -18,7 +19,7 @@ type Props = {
 };
 
 export default class App extends React.Component<Props> {
-  static async getInitialProps({}) {
+  static async getInitialProps({ req }: NextContext) {
     const cache = new InMemoryCache();
     const client = new TwirpClient(prefix, cache);
     try {

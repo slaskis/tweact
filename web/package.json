@@ -17,6 +17,7 @@
     "@types/react-test-renderer": "^16.0.1",
     "@types/styled-jsx": "^2.2.3",
     "@zeit/next-typescript": "^1.1.0",
+    "fork-ts-checker-webpack-plugin": "^0.4.3",
     "jest": "^23.2.0",
     "react-test-renderer": "^16.4.1",
     "ts-jest": "^22.0.0",
