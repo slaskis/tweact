@@ -21,11 +21,17 @@ type Props = {
 export default class App extends React.Component<Props> {
   static async getInitialProps({ req }: NextContext) {
     const cache = new InMemoryCache();
-    const client = new TwirpClient(prefix, cache);
-    try {
-      await renderState(client, <App />);
-    } catch (err) {
-      console.error("renderState err", err);
+    // only render state in ssr. let client side navigation
+    // show loading states instead
+    if (req) {
+      const client = new TwirpClient(prefix, cache);
+      try {
+        console.log("APP RENDER STATE START");
+        await renderState(client, <App />);
+        console.log("APP RENDER STATE END");
+      } catch (err) {
+        console.error("renderState err", err);
+      }
     }
     return { cache: await cache.dump() };
   }
