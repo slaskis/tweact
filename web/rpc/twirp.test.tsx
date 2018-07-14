@@ -17,17 +17,21 @@ test("none", async () => {
   expect(renderer.create(<App />).toJSON()).toMatchSnapshot();
 });
 
-test("client in context", async () => {
+test.only("client in context", async () => {
   const cache = new InMemoryCache();
   const client = new TwirpJSONClient("http://localhost:4000/twirp/", cache);
 
-  const spy = jest.spyOn(client, "request");
+  const spy = jest.spyOn(cache, "set");
   const App = () => (
     <ListTodos>{({ loading }) => (loading ? "LOADING" : "OK")}</ListTodos>
   );
   await renderState(client, <App />);
   expect(cache.store.size).toBe(1);
-  expect(spy).toHaveBeenCalledTimes(2); // once with pending, once without
+  expect(spy).toHaveBeenCalledTimes(1);
+  spy.mockReset();
+  await renderState(client, <App />);
+  expect(cache.store.size).toBe(1);
+  expect(spy).toHaveBeenCalledTimes(0);
   spy.mockReset();
   expect(
     renderer
@@ -39,5 +43,5 @@ test("client in context", async () => {
       .toJSON()
   ).toMatchSnapshot();
   expect(cache.store.size).toBe(1);
-  expect(spy).toHaveBeenCalledTimes(1); // should be cached now
+  expect(spy).toHaveBeenCalledTimes(0);
 });

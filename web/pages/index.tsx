@@ -41,7 +41,6 @@ export default class App extends React.Component<Props> {
     if (this.props.cache) {
       cache.load(this.props.cache);
     }
-    console.log("App render", cache);
     return (
       <div>
         <Head title="Home" />

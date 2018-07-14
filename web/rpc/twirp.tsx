@@ -1,39 +1,60 @@
 import React, { Children } from "react";
 import fetch from "isomorphic-fetch";
+import { createHash } from "crypto";
 
 interface TwirpCache<Key, Res> {
-  get(key: Key): Promise<Res>;
-  set(key: Key, res: Res): Promise<void>;
-  delete(key: Key): Promise<void>;
-  purge(): Promise<void>;
-  dump(): Promise<Iterable<[Key, Res]>>;
-  load(it: Iterable<[Key, Res]>): Promise<void>;
+  get(key: Key): Res;
+  set(key: Key, res: Res): void;
+  delete(key: Key): void;
+  purge(): void;
+  dump(): Iterable<[Key, Res]>;
+  load(it: Iterable<[Key, Res]>): void;
 }
+
+let caches = 0;
 
 export class InMemoryCache<Res> implements TwirpCache<string, Res | undefined> {
   store = new Map<string, Res>();
 
-  async get(key: string) {
+  private id: string;
+
+  constructor() {
+    this.id = (caches++).toString();
+    console.log("new cache:", this.id);
+  }
+
+  get(key: string) {
+    console.log("cache(%s) get: %s", this.id, key);
     return this.store.get(key);
   }
-  async set(key: string, res: Res) {
+  set(key: string, res: Res) {
+    console.log("cache(%s) set: %s", this.id, key);
     this.store.set(key, res);
   }
-  async delete(key: string) {
+  delete(key: string) {
+    console.log("cache(%s) delete: %s", this.id, key);
     this.store.delete(key);
   }
-  async purge() {
+  purge() {
+    console.log("cache(%s) purge", this.id);
     this.store.clear();
   }
-  async dump() {
-    return this.store.entries();
+  dump() {
+    const dumped = [...this.store];
+    console.log("cache(%s) dump: ", this.id, dumped);
+    return dumped as Iterable<any>;
   }
-  async load(obj: Iterable<any>) {
+  load(obj: Iterable<any>) {
+    console.log("cache(%s) load: ", this.id, obj);
     this.store = new Map(obj);
   }
 }
 
 class TwirpRequest<Res> {
+  static index = 0;
+
+  index: number;
+  key: string;
   cache: TwirpCache<string, Res>;
   loading: boolean = false;
   request: { url: string } & RequestInit;
@@ -42,14 +63,25 @@ class TwirpRequest<Res> {
     cache: TwirpCache<string, Res>,
     request: { url: string } & RequestInit
   ) {
+    this.key = createHash("md5")
+      .update(JSON.stringify(request))
+      .digest("hex")
+      .slice(0, 4);
     this.cache = cache;
     this.request = request;
+    this.index = ++TwirpRequest.index;
   }
 
   async send(): Promise<Res> {
-    const key = JSON.stringify(this.request);
-    const cached = await this.cache.get(key);
-    console.log("twirp request, cached? %s", cached, key, this.cache);
+    console.log("twirp request send(%s)", this.index);
+    const cached = this.cache.get(this.key);
+    console.log(
+      "twirp request, cached? %s loading? %s index %s",
+      !!cached,
+      this.loading,
+      this.key,
+      this.index
+    );
     if (cached) {
       return cached;
     }
@@ -60,13 +92,14 @@ class TwirpRequest<Res> {
       if (!res.ok) {
         throw new TwirpError(res.status, body);
       }
-      await this.cache.set(key, body as Res);
-      console.log("requested", body);
+      console.log("twirp request cached! %s", this.key);
+      this.cache.set(this.key, body as Res);
       return body as Res;
     } catch (err) {
-      console.log("request error", err);
+      console.log("twirp request error", err);
       throw err;
     } finally {
+      console.log("twirp request done");
       this.loading = false;
     }
   }
@@ -341,15 +374,23 @@ export const renderState = (
       console.log(" - %s queued", queue.length);
       const pending = queue
         .map(req => ({ req, res: req.send() }))
-        .filter(({ req }) => req.loading)
+        .filter(
+          ({ req }) =>
+            console.log("   - %s loading? %s", req.index, req.loading) ||
+            req.loading
+        )
         .map(({ res }) => res);
       console.log(" - %s pending", pending.length);
       if (pending.length) {
         // wait for results then try to go
         // deeper if we succeed
         await Promise.all(pending);
-        render(depth + 1);
+        await render(depth + 1);
+      } else {
+        console.log("renderState done! (no more pending requests)");
       }
+    } else {
+      console.log("renderState reached max depth...");
     }
   };
   return render();
@@ -359,12 +400,6 @@ export const renderState = (
 // without any magic. Since we keep track using the context we only
 // need the lifecycle method anyway.
 function renderElement(element: any, context = {}, tab = "") {
-  // console.log(
-  //   element.type,
-  //   typeof element.type,
-  //   element.type && element.type._context,
-  //   element.type && element.type.Consumer
-  // );
   if (
     typeof element == "string" ||
     typeof element == "number" ||
@@ -386,20 +421,18 @@ function renderElement(element: any, context = {}, tab = "") {
       console.log(
         tab + "context provider",
         Component.displayName || Component.name || "<unnamed>",
-        props.value
+        Object.keys(props.value)
       );
       // react 16 context provider
-      // console.log("provider", Component._context, props.value);
       Component._context._currentValue = props.value;
       child = props.children;
     } else if (Component.Consumer) {
       console.log(
         tab + "context consumer",
         Component.displayName || Component.name || "<unnamed>",
-        Component._currentValue
+        Object.keys(Component._currentValue)
       );
       // react 16 context consumer
-      // console.log("consumer", Component.Consumer);
       child = props.children(Component._currentValue);
     } else if (Component.prototype && Component.prototype.isReactComponent) {
       console.log(
@@ -431,6 +464,10 @@ function renderElement(element: any, context = {}, tab = "") {
       );
       // stateless function
       child = Component(props, context);
+    } else if (Component === React.StrictMode) {
+      console.log(tab + "strict mode");
+      // strict mode
+      child = element.props.children;
     } else {
       console.warn(tab + "unknown component?", Component);
     }
