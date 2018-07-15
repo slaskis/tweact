@@ -1,6 +1,7 @@
-import React, { Children } from "react";
+import React from "react";
 import fetch from "isomorphic-fetch";
 import { createHash } from "crypto";
+import reactTreeWalker from "react-tree-walker";
 
 interface TwirpCache<Key, Res> {
   get(key: Key): Res;
@@ -267,7 +268,8 @@ export abstract class TwirpService<Req, Res> extends React.Component<
     skipped: false
   };
 
-  method: string;
+  private method: string;
+  req?: TwirpRequest<Res>;
 
   constructor(method: string, props: TwirpServiceProps<Req, Res>) {
     super(props);
@@ -277,7 +279,9 @@ export abstract class TwirpService<Req, Res> extends React.Component<
     // queue a request
     const { twirp } = this.props;
     if (!props.lazy && twirp && twirp.client && twirp.queue) {
-      twirp.queue.push(twirp.client.request(method, props.variables || {}, {}));
+      // const req = twirp.client.request(method, props.variables || {}, {});
+      // twirp.queue.push(req);
+      this.req = twirp.client.request(method, props.variables || {}, {});
     }
   }
 
@@ -365,29 +369,29 @@ export const renderState = (
     if (depth < maxDepth) {
       console.log(" ==== RENDERING TREE %d ==== ", depth);
       const queue: TwirpRequest<any>[] = [];
-      renderElement(
+      let pending = 0;
+      await reactTreeWalker(
         <TwirpContext.Provider value={{ client, queue }}>
           {component}
-        </TwirpContext.Provider>
+        </TwirpContext.Provider>,
+        async (
+          _element: React.ReactElement<any>,
+          instance: React.Component & { req?: TwirpRequest<any> },
+          _context: React.Context<any>
+        ) => {
+          if (instance && instance.req) {
+            const waiter = instance.req.send();
+            if (instance.req.loading) {
+              pending++;
+              await waiter;
+            }
+          }
+          return true;
+        }
       );
-      console.log(" ==== DONE RENDERING %d ==== ", depth);
-      console.log(" - %s queued", queue.length);
-      const pending = queue
-        .map(req => ({ req, res: req.send() }))
-        .filter(
-          ({ req }) =>
-            console.log("   - %s loading? %s", req.index, req.loading) ||
-            req.loading
-        )
-        .map(({ res }) => res);
-      console.log(" - %s pending", pending.length);
-      if (pending.length) {
-        // wait for results then try to go
-        // deeper if we succeed
-        await Promise.all(pending);
-        await render(depth + 1);
-      } else {
-        console.log("renderState done! (no more pending requests)");
+      console.log(" ==== DONE RENDERING %d ==== ", depth, pending);
+      if (pending) {
+        return render(depth + 1);
       }
     } else {
       console.log("renderState reached max depth...");
@@ -395,91 +399,3 @@ export const renderState = (
   };
   return render();
 };
-
-// renderElement is a very simple way to render a React element tree
-// without any magic. Since we keep track using the context we only
-// need the lifecycle method anyway.
-function renderElement(element: any, context = {}, tab = "") {
-  if (
-    typeof element == "string" ||
-    typeof element == "number" ||
-    typeof element == "boolean"
-  ) {
-    // ignore basic elements
-    console.log(tab + "basic element", element);
-  } else if (Array.isArray(element)) {
-    // react 16 array of children
-    console.log(tab + "array element");
-    element.forEach(c => c && renderElement(c, context, tab + "  "));
-  } else if (typeof element.type != "string" && element.type) {
-    // stateless component or class
-    let child;
-    let childContext = context;
-    const Component = element.type;
-    const props = Object.assign({}, Component.defaultProps, element.props);
-    if (Component._context) {
-      console.log(
-        tab + "context provider",
-        Component.displayName || Component.name || "<unnamed>",
-        Object.keys(props.value)
-      );
-      // react 16 context provider
-      Component._context._currentValue = props.value;
-      child = props.children;
-    } else if (Component.Consumer) {
-      console.log(
-        tab + "context consumer",
-        Component.displayName || Component.name || "<unnamed>",
-        Object.keys(Component._currentValue)
-      );
-      // react 16 context consumer
-      child = props.children(Component._currentValue);
-    } else if (Component.prototype && Component.prototype.isReactComponent) {
-      console.log(
-        tab + "class component",
-        Component.displayName || Component.name || "<unnamed>"
-      );
-      // react class
-      const instance = new Component(props, context);
-      instance.props = instance.props || props;
-      instance.context = instance.context || context;
-      instance.state = instance.state || null;
-      instance.setState = (newState: object | Function) => {
-        if (typeof newState === "function") {
-          newState = newState(instance.state, instance.props);
-        }
-        instance.state = Object.assign({}, instance.state, newState);
-      };
-      if (instance.componentWillMount) {
-        instance.componentWillMount();
-      }
-      if (instance.getChildContext) {
-        childContext = Object.assign({}, context, instance.getChildContext());
-      }
-      child = instance.render();
-    } else if (typeof Component == "function") {
-      console.log(
-        tab + "stateless component",
-        Component.displayName || Component.name || "<unnamed>"
-      );
-      // stateless function
-      child = Component(props, context);
-    } else if (Component === React.StrictMode) {
-      console.log(tab + "strict mode");
-      // strict mode
-      child = element.props.children;
-    } else {
-      console.warn(tab + "unknown component?", Component);
-    }
-
-    Array.of(child).forEach(
-      c => c && renderElement(c, childContext, tab + "  ")
-    );
-  } else if (element.props && element.props.children) {
-    // an element with children
-    Children.forEach(
-      element.props.children,
-      c => c && renderElement(c, context, tab + "  ")
-    );
-  }
-}

@@ -26,9 +26,9 @@ export default class App extends React.Component<Props> {
     if (req) {
       const client = new TwirpClient(prefix, cache);
       try {
-        console.log("APP RENDER STATE START");
+        console.log(" -- APP RENDER STATE START");
         await renderState(client, <App />);
-        console.log("APP RENDER STATE END");
+        console.log(" -- APP RENDER STATE END");
       } catch (err) {
         console.error("renderState err", err);
       }
