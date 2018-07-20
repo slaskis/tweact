@@ -17,13 +17,16 @@ test:
 	@go test ./...
 .PHONY: test
 
-generate: vendor
+generate: vendor _tools/bin/protoc-gen-tweact
 	go generate .
 .PHONY: generate
 
 vendor:
 	dep ensure
 .PHONY: vendor
+
+_tools/bin/%: $(SOURCE)
+	go build -o $@ $*/main.go
 
 bin/%: $(SOURCE)
 	go build -o $@ cmd/$*/$*.go
