@@ -154,7 +154,9 @@ interface TwirpServiceProps<Req, Res> {
 }
 
 export const withTwirp = <Req, Res>(
-  Component: React.ComponentClass<TwirpServiceProps<Req, Res>>
+  Component:
+    | React.ComponentClass<TwirpServiceProps<Req, Res>>
+    | React.SFC<TwirpServiceProps<Req, Res>>
 ) => {
   const WithTwirp: React.StatelessComponent<
     TwirpServiceProps<Req, Res>
