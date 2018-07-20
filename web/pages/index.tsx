@@ -10,7 +10,7 @@ import {
   InMemoryCache
 } from "../rpc/twirp";
 
-import { ListTodos, CreateTodo } from "../rpc/TodoService";
+import { ListTodos, CreateTodo, RemoveTodo, Todo } from "../rpc/TodoService";
 
 const prefix = "http://localhost:4000/twirp/";
 
@@ -77,7 +77,7 @@ const App = () => {
           ) : error ? (
             <span>Error: {error.message}</span>
           ) : todos && todos.length ? (
-            <ul>{todos.map(t => <li key={t.id}>{t.title}</li>)}</ul>
+            <ul>{todos.map(t => <TodoRow key={t.id} {...t} />)}</ul>
           ) : (
             <span>No todos available</span>
           )
@@ -107,5 +107,23 @@ const App = () => {
     </div>
   );
 };
+
+const TodoRow = ({ id, title }: Todo) => (
+  <RemoveTodo wait>
+    {({ update, loading }) => (
+      <li key={id}>
+        <span>{title}</span>
+        <button disabled={loading} onClick={() => update({ id })}>
+          {loading ? "Removing..." : "Remove"}
+        </button>
+        <style jsx>{`
+          li {
+            display: flex;
+          }
+        `}</style>
+      </li>
+    )}
+  </RemoveTodo>
+);
 
 export default withTwirp(App);

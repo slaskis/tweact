@@ -11,8 +11,6 @@ export interface TwirpCache<Res> {
   load(it: string): TwirpCache<Res>;
 }
 
-let caches = 0;
-
 export class InMemoryCache<Res> implements TwirpCache<Res | undefined> {
   store = new Map<string, Res>();
 
