@@ -7,7 +7,14 @@ import {
   TwirpProvider,
   InMemoryCache
 } from "./twirp";
-import { ListTodos, ListTodoResponse, ListTodoRequest } from "./TodoService";
+import {
+  ListTodos,
+  ListTodoResponse,
+  ListTodoRequest,
+  CreateTodoRequest,
+  TodoResponse,
+  CreateTodo
+} from "./TodoService";
 
 test("none", async () => {
   const cache = new InMemoryCache();
@@ -18,7 +25,7 @@ test("none", async () => {
   expect(renderer.create(<App />).toJSON()).toMatchSnapshot();
 });
 
-test.only("client in context", async () => {
+test("simple ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
   const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
     async request(
@@ -48,6 +55,99 @@ test.only("client in context", async () => {
       .toJSON()
   ).toMatchSnapshot();
   expect(cache.store.size).toBe(1);
+});
+
+test("lazy ssr", async () => {
+  const cache = new InMemoryCache<ListTodoResponse>();
+  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+    async request(
+      _method: string,
+      _variables: Partial<ListTodoResponse>,
+      _options: any
+    ) {
+      console.log("mock client request");
+      return { todos: [] };
+    }
+  };
+
+  const App = () => (
+    <ListTodos lazy>
+      {({ loading, error }) => (error ? "ERROR" : loading ? "LOADING" : "OK")}
+    </ListTodos>
+  );
+  await renderState(client, cache, <App />);
+  expect(
+    renderer
+      .create(
+        <TwirpProvider value={{ client, cache }}>
+          <App />
+        </TwirpProvider>
+      )
+      .toJSON()
+  ).toMatchSnapshot();
+});
+
+test("fail ssr", async () => {
+  const cache = new InMemoryCache<ListTodoResponse>();
+  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+    async request(
+      _method: string,
+      _variables: Partial<ListTodoResponse>,
+      _options: any
+    ) {
+      console.log("mock client exception");
+      throw new Error("hello");
+    }
+  };
+
+  const App = () => (
+    <ListTodos>
+      {({ loading, error }) => (error ? "ERROR" : loading ? "LOADING" : "OK")}
+    </ListTodos>
+  );
+  expect(renderState(client, cache, <App />)).rejects.toThrow("Error");
+  expect(
+    renderer
+      .create(
+        <TwirpProvider value={{ client, cache }}>
+          <App />
+        </TwirpProvider>
+      )
+      .toJSON()
+  ).toMatchSnapshot();
+  // NOTE: that the snapshot is LOADING because if server rendering
+  // fails we still try to load it client side. if we waited for the
+  // load it should end up as ERROR (how can we test this??)
+});
+
+test("wait ssr", async () => {
+  const cache = new InMemoryCache<TodoResponse>();
+  const client: TwirpClient<CreateTodoRequest, TodoResponse | undefined> = {
+    async request(
+      _method: string,
+      _variables: Partial<CreateTodoRequest>,
+      _options: any
+    ): Promise<TodoResponse> {
+      console.log("mock client request");
+      return { todo: { id: "1", title: "Test" } };
+    }
+  };
+
+  const App = () => (
+    <CreateTodo>
+      {({ loading, error }) => (error ? "ERROR" : loading ? "LOADING" : "OK")}
+    </CreateTodo>
+  );
+  await renderState(client, cache, <App />);
+  expect(
+    renderer
+      .create(
+        <TwirpProvider value={{ client, cache }}>
+          <App />
+        </TwirpProvider>
+      )
+      .toJSON()
+  ).toMatchSnapshot();
 });
 
 test("in memory cache", () => {

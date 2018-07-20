@@ -1,5 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`client in context 1`] = `"OK"`;
+exports[`fail ssr 1`] = `"LOADING"`;
+
+exports[`lazy ssr 1`] = `"LOADING"`;
 
 exports[`none 1`] = `<div />`;
+
+exports[`simple ssr 1`] = `"OK"`;
+
+exports[`wait ssr 1`] = `"OK"`;

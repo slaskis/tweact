@@ -16,36 +16,22 @@ let caches = 0;
 export class InMemoryCache<Res> implements TwirpCache<Res | undefined> {
   store = new Map<string, Res>();
 
-  private id: string;
-
-  constructor() {
-    this.id = (caches++).toString();
-    console.log("new cache:", this.id);
-  }
-
   get(key: string) {
-    const val = this.store.get(key);
-    console.log("cache(%s) get: %s", this.id, key, val);
     return this.store.get(key);
   }
   set(key: string, res: Res) {
-    console.log("cache(%s) set: %s", this.id, key);
     this.store.set(key, res);
   }
   delete(key: string) {
-    console.log("cache(%s) delete: %s", this.id, key);
     this.store.delete(key);
   }
   purge() {
-    console.log("cache(%s) purge", this.id);
     this.store.clear();
   }
   dump() {
-    console.log("cache(%s) dump: ", this.id);
     return JSON.stringify([...this.store]);
   }
   load(obj?: string) {
-    console.log("cache(%s) load: ", this.id, obj);
     if (obj) {
       this.store = new Map(JSON.parse(obj));
     }
@@ -253,6 +239,8 @@ export abstract class TwirpService<Req, Res> extends React.Component<
     super(props);
     this.connector = new TwirpConnector(method);
 
+    // attempt a request from the connector, which if in cache will
+    // populate this.connector.data.
     if (
       !this.props.lazy &&
       !this.props.wait &&
@@ -265,7 +253,7 @@ export abstract class TwirpService<Req, Res> extends React.Component<
           this.props.variables || EmptyVars,
           props.twirp.cache
         )
-        .catch(err => console.warn(err));
+        .catch(error => console.warn("twirp constructor exception:", error));
     }
 
     // not set as a class property because constructor is
@@ -274,12 +262,12 @@ export abstract class TwirpService<Req, Res> extends React.Component<
       data: this.connector.data || EmptyData,
       error: undefined,
       loading: !this.props.wait && !this.connector.data,
-      skipped: false
+      skipped: this.skipped
     };
   }
 
   componentDidMount() {
-    if (!this.props.wait) {
+    if (!this.props.wait && this.state.data === EmptyData) {
       this.request(this.props.variables);
     }
   }
@@ -311,7 +299,9 @@ export abstract class TwirpService<Req, Res> extends React.Component<
         loading: true,
         skipped: false
       });
+
       await this.connector.request(client, variables, cache);
+
       this.setState({
         data: this.connector.data || this.state.data,
         error: undefined,
@@ -319,6 +309,7 @@ export abstract class TwirpService<Req, Res> extends React.Component<
       });
       return this.connector.data;
     } catch (error) {
+      console.log("twirp request exception", error);
       this.setState({
         error,
         loading: false
@@ -357,8 +348,7 @@ export const renderState = (
       let pending = 0;
       const visitor = async (
         _element: React.ReactElement<any>,
-        instance: React.Component & {
-          props: { variables?: any };
+        instance: React.Component<{ variables?: any }> & {
           connector?: TwirpConnector<any, any>;
         },
         _context: React.Context<any>
