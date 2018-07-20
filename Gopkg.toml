@@ -30,9 +30,5 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/gogo/protobuf"
-  version = "1.0.0"
-
-[[constraint]]
   name = "github.com/rs/cors"
   version = "1.4.0"

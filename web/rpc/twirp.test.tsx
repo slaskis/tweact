@@ -10,10 +10,11 @@ import {
 import {
   ListTodos,
   ListTodoResponse,
-  ListTodoRequest,
+  ListTodosRequest,
   CreateTodoRequest,
   TodoResponse,
-  CreateTodo
+  CreateTodo,
+  TodoState
 } from "./TodoService";
 
 test("none", async () => {
@@ -27,7 +28,7 @@ test("none", async () => {
 
 test("simple ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
-  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+  const client: TwirpClient<ListTodosRequest, ListTodoResponse | undefined> = {
     async request(
       _method: string,
       _variables: Partial<ListTodoResponse>,
@@ -59,7 +60,7 @@ test("simple ssr", async () => {
 
 test("nested ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
-  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+  const client: TwirpClient<ListTodosRequest, ListTodoResponse | undefined> = {
     async request(
       _method: string,
       _variables: Partial<ListTodoResponse>,
@@ -101,7 +102,7 @@ test("nested ssr", async () => {
 
 test("lazy ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
-  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+  const client: TwirpClient<ListTodosRequest, ListTodoResponse | undefined> = {
     async request(
       _method: string,
       _variables: Partial<ListTodoResponse>,
@@ -131,7 +132,7 @@ test("lazy ssr", async () => {
 
 test("fail ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
-  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+  const client: TwirpClient<ListTodosRequest, ListTodoResponse | undefined> = {
     async request(
       _method: string,
       _variables: Partial<ListTodoResponse>,
@@ -171,7 +172,7 @@ test("wait ssr", async () => {
       _options: any
     ): Promise<TodoResponse> {
       console.log("mock client request");
-      return { todo: { id: "1", title: "Test" } };
+      return { todo: { id: "1", title: "Test", state: TodoState.ACTIVE } };
     }
   };
 
