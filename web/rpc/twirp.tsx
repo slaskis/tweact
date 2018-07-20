@@ -1,20 +1,19 @@
 import React from "react";
 import fetch from "isomorphic-fetch";
-import { createHash } from "crypto";
 import reactTreeWalker from "react-tree-walker";
 
-interface TwirpCache<Key, Res> {
-  get(key: Key): Res;
-  set(key: Key, res: Res): void;
-  delete(key: Key): void;
+export interface TwirpCache<Res> {
+  get(key: string): Res;
+  set(key: string, res: Res): void;
+  delete(key: string): void;
   purge(): void;
-  dump(): Iterable<[Key, Res]>;
-  load(it: Iterable<[Key, Res]>): void;
+  dump(): string;
+  load(it: string): TwirpCache<Res>;
 }
 
 let caches = 0;
 
-export class InMemoryCache<Res> implements TwirpCache<string, Res | undefined> {
+export class InMemoryCache<Res> implements TwirpCache<Res | undefined> {
   store = new Map<string, Res>();
 
   private id: string;
@@ -25,7 +24,8 @@ export class InMemoryCache<Res> implements TwirpCache<string, Res | undefined> {
   }
 
   get(key: string) {
-    console.log("cache(%s) get: %s", this.id, key);
+    const val = this.store.get(key);
+    console.log("cache(%s) get: %s", this.id, key, val);
     return this.store.get(key);
   }
   set(key: string, res: Res) {
@@ -41,89 +41,33 @@ export class InMemoryCache<Res> implements TwirpCache<string, Res | undefined> {
     this.store.clear();
   }
   dump() {
-    const dumped = [...this.store];
-    console.log("cache(%s) dump: ", this.id, dumped);
-    return dumped as Iterable<any>;
+    console.log("cache(%s) dump: ", this.id);
+    return JSON.stringify([...this.store]);
   }
-  load(obj: Iterable<any>) {
+  load(obj?: string) {
     console.log("cache(%s) load: ", this.id, obj);
-    this.store = new Map(obj);
+    if (obj) {
+      this.store = new Map(JSON.parse(obj));
+    }
+    return this;
   }
 }
 
-class TwirpRequest<Res> {
-  static index = 0;
-
-  index: number;
-  key: string;
-  cache: TwirpCache<string, Res>;
-  loading: boolean = false;
-  request: { url: string } & RequestInit;
-
-  constructor(
-    cache: TwirpCache<string, Res>,
-    request: { url: string } & RequestInit
-  ) {
-    this.key = createHash("md5")
-      .update(JSON.stringify(request))
-      .digest("hex")
-      .slice(0, 4);
-    this.cache = cache;
-    this.request = request;
-    this.index = ++TwirpRequest.index;
-  }
-
-  async send(): Promise<Res> {
-    console.log("twirp request send(%s)", this.index);
-    const cached = this.cache.get(this.key);
-    console.log(
-      "twirp request, cached? %s loading? %s index %s",
-      !!cached,
-      this.loading,
-      this.key,
-      this.index
-    );
-    if (cached) {
-      return cached;
-    }
-    try {
-      this.loading = true;
-      const res = await fetch(this.request.url, this.request);
-      const body = await res.json();
-      if (!res.ok) {
-        throw new TwirpError(res.status, body);
-      }
-      console.log("twirp request cached! %s", this.key);
-      this.cache.set(this.key, body as Res);
-      return body as Res;
-    } catch (err) {
-      console.log("twirp request error", err);
-      throw err;
-    } finally {
-      console.log("twirp request done");
-      this.loading = false;
-    }
-  }
-}
+const toKey = (method: string, req: any) => method + ":" + JSON.stringify(req);
 
 export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
   prefix: string;
-  cache: TwirpCache<string, Res>;
-  id?: number;
 
-  constructor(prefix: string, cache: TwirpCache<string, Res>) {
-    this.id = Math.random();
+  constructor(prefix: string) {
     this.prefix = prefix;
-    this.cache = cache;
   }
 
   request(
     method: string,
     variables: Req,
     options: { headers?: object } = {}
-  ): TwirpRequest<Res> {
-    return new TwirpRequest(this.cache, {
-      url: this.prefix + method,
+  ): Promise<Res> {
+    return fetch(this.prefix + method, {
       method: "POST",
       headers: {
         ...options.headers,
@@ -131,17 +75,19 @@ export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(variables)
-    });
+    })
+      .then(res => res.json().then(body => ({ res, body })))
+      .then(({ res, body }) => {
+        if (!res.ok) {
+          throw new TwirpError(res.status, body);
+        }
+        return body as Res;
+      });
   }
 }
 
-interface TwirpClient<Req, Res> {
-  cache: TwirpCache<string, Res>;
-  request(
-    method: string,
-    variables: Partial<Req>,
-    options: any
-  ): TwirpRequest<Res>;
+export interface TwirpClient<Req, Res> {
+  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
 }
 type TwirpErrorMeta = {
   [k: string]: string;
@@ -168,47 +114,57 @@ class TwirpError extends Error {
 }
 
 interface TwirpServiceState<T> {
-  data: T | Partial<T>;
-  error?: TwirpError;
-  loading: boolean;
-  skipped: boolean;
+  readonly data: T | Partial<T>;
+  readonly error?: TwirpError;
+  readonly loading: boolean;
+  readonly skipped: boolean;
 }
 interface TwirpServiceMethods<Req, Res> {
   // TODO invalidate?
+  // TODO client?: TwirpClient<Req, Res>;
   update: (variables?: Partial<Req>) => Promise<Res | undefined>;
-  client?: TwirpClient<Req, Res>;
 }
 type SkipFunc<V> = (vars: V) => boolean;
 
 interface TwirpServiceProps<Req, Res> {
+  /**
+   * Variables to pass into the rpc method
+   */
   variables?: Partial<Req>;
 
-  // Wait for loading to complete before rendering anything instead of
-  // passing loading boolean into the render callback
+  /**
+   * Wait to load until `update` has been called.
+   *
+   * Useful for rpc methods which update data.
+   *
+   * Will also enable `lazy` if unset.
+   */
   wait?: boolean;
 
-  // Lazy load server side
+  /** Lazy load server side */
   lazy?: boolean;
 
-  // Control if query should be skipped.
-  // Set to `true` and control the query using `refetch()`
-  // or to a function which accepts the current variables
-  // and returns a boolean controling if a request should
-  // be made. Rendering will still happen, with a skipped flag
+  /** Control if query should be skipped.
+   * Set to `true` and control the query using `refetch()`
+   * or to a function which accepts the current variables
+   * and returns a boolean controling if a request should
+   * be made. Rendering will still happen, with a skipped flag
+   */
   skip?: boolean | SkipFunc<Partial<Req>>;
 
-  // Fail by throwing an exception and letting the React error boundary
-  // take care of it instead of passing the error into the render callback
+  /**
+   * Fail by throwing an exception and letting the React error boundary
+   * take care of it instead of passing the error into the render callback
+   */
   fail?: boolean;
 
-  // Twirp client and (in ssr) request queue
+  /**
+   * Twirp context. Set by the TwirpProvider.
+   */
   twirp?: TwirpClientContext<Req, Res>;
 
   // Render prop
-  render?(
-    _: TwirpServiceState<Res> & TwirpServiceMethods<Req, Res>
-  ): React.ReactNode;
-  children?(
+  children(
     _: TwirpServiceState<Res> & TwirpServiceMethods<Req, Res>
   ): React.ReactNode;
 }
@@ -231,8 +187,7 @@ export const withTwirp = <Req, Res>(
 
 interface TwirpClientContext<Req, Res> {
   client?: TwirpClient<Req, Res>;
-  method?: string;
-  queue?: TwirpRequest<Res>[];
+  cache?: TwirpCache<Res>;
 }
 
 const TwirpContext = React.createContext<TwirpClientContext<any, any>>({});
@@ -249,7 +204,7 @@ export const TwirpProvider = ({
       <TwirpContext.Provider
         value={{
           client: value.client || parent.client,
-          queue: parent.queue
+          cache: value.cache || parent.cache
         }}
         children={children}
       />
@@ -257,49 +212,87 @@ export const TwirpProvider = ({
   </TwirpContext.Consumer>
 );
 
+class TwirpConnector<Req, Res> {
+  data?: Res;
+  method: string;
+  options: any;
+
+  constructor(method: string) {
+    this.method = method;
+    this.options = {};
+  }
+
+  request(
+    client: TwirpClient<Req, Res>,
+    variables: Partial<Req>,
+    cache?: TwirpCache<Res>
+  ): Promise<Res> {
+    const key = toKey(this.method, variables);
+    this.data = cache && cache.get(key);
+    if (!this.data) {
+      return client
+        .request(this.method, variables, this.options)
+        .then(res => (cache && cache.set(key, res)) || (this.data = res));
+    }
+    return Promise.resolve(this.data);
+  }
+}
+
+const EmptyData = Object.freeze({});
+const EmptyVars = Object.freeze({});
+
 export abstract class TwirpService<Req, Res> extends React.Component<
   TwirpServiceProps<Req, Res>,
   TwirpServiceState<Res>
 > {
-  state: TwirpServiceState<Res> = {
-    data: {},
-    error: undefined,
-    loading: this.props.lazy != true,
-    skipped: false
-  };
+  connector: TwirpConnector<Req, Res>;
 
-  private method: string;
-  req?: TwirpRequest<Res>;
+  readonly state: TwirpServiceState<Res>;
 
   constructor(method: string, props: TwirpServiceProps<Req, Res>) {
     super(props);
+    this.connector = new TwirpConnector(method);
 
-    this.method = method;
-
-    // queue a request
-    const { twirp } = this.props;
-    if (!props.lazy && twirp && twirp.client && twirp.queue) {
-      // const req = twirp.client.request(method, props.variables || {}, {});
-      // twirp.queue.push(req);
-      this.req = twirp.client.request(method, props.variables || {}, {});
+    if (
+      !this.props.lazy &&
+      !this.props.wait &&
+      props.twirp &&
+      props.twirp.client
+    ) {
+      this.connector
+        .request(
+          props.twirp.client,
+          this.props.variables || EmptyVars,
+          props.twirp.cache
+        )
+        .catch(err => console.warn(err));
     }
+
+    // not set as a class property because constructor is
+    // called _afterwards_
+    this.state = {
+      data: this.connector.data || EmptyData,
+      error: undefined,
+      loading: !this.props.wait && !this.connector.data,
+      skipped: false
+    };
   }
 
   componentDidMount() {
-    if (!this.props.lazy) {
+    if (!this.props.wait) {
       this.request(this.props.variables);
     }
   }
 
   get skipped() {
     if (typeof this.props.skip == "function") {
-      return this.props.skip(this.props.variables || {});
+      return this.props.skip(this.props.variables || EmptyVars);
     }
     return this.props.skip == true;
   }
 
   request = async (vars?: Partial<Req>): Promise<Res | undefined> => {
-    const { client = null } = this.props.twirp || {};
+    const { client = null, cache = undefined } = this.props.twirp || {};
 
     if (!client) {
       throw new Error("missing twirp client");
@@ -318,14 +311,13 @@ export abstract class TwirpService<Req, Res> extends React.Component<
         loading: true,
         skipped: false
       });
-      const req = client.request(this.method, variables, {});
-      const data = await req.send();
+      await this.connector.request(client, variables, cache);
       this.setState({
-        data,
+        data: this.connector.data || this.state.data,
         error: undefined,
-        loading: req.loading
+        loading: false
       });
-      return data;
+      return this.connector.data;
     } catch (error) {
       this.setState({
         error,
@@ -338,17 +330,9 @@ export abstract class TwirpService<Req, Res> extends React.Component<
     if (this.props.fail && this.state.error) {
       throw this.state.error;
     }
-    if (this.props.wait && this.state.loading) {
-      return null;
-    }
-    const render = this.props.render || this.props.children;
-    if (!render) {
-      return null;
-    }
-    return render({
+    return this.props.children({
       ...this.state,
-      update: this.request,
-      client: this.props.twirp ? this.props.twirp.client : undefined
+      update: this.request
     });
   }
 }
@@ -362,32 +346,39 @@ export abstract class TwirpService<Req, Res> extends React.Component<
 // or we reach the assigned maxDepth option
 export const renderState = (
   client: TwirpClient<any, any>,
+  cache: TwirpCache<any>,
   component: React.ReactNode,
   { maxDepth = 3 } = {}
 ) => {
+  const ctx = { client, cache };
   const render = async (depth = 0): Promise<void> => {
     if (depth < maxDepth) {
       console.log(" ==== RENDERING TREE %d ==== ", depth);
-      const queue: TwirpRequest<any>[] = [];
       let pending = 0;
-      await reactTreeWalker(
-        <TwirpContext.Provider value={{ client, queue }}>
-          {component}
-        </TwirpContext.Provider>,
-        async (
-          _element: React.ReactElement<any>,
-          instance: React.Component & { req?: TwirpRequest<any> },
-          _context: React.Context<any>
-        ) => {
-          if (instance && instance.req) {
-            const waiter = instance.req.send();
-            if (instance.req.loading) {
-              pending++;
-              await waiter;
-            }
+      const visitor = async (
+        _element: React.ReactElement<any>,
+        instance: React.Component & {
+          props: { variables?: any };
+          connector?: TwirpConnector<any, any>;
+        },
+        _context: React.Context<any>
+      ) => {
+        if (instance && instance.connector) {
+          const waiter = instance.connector.request(
+            client,
+            instance.props.variables || EmptyVars,
+            cache
+          );
+          if (!instance.connector.data) {
+            pending++;
           }
-          return true;
+          await waiter;
         }
+        return true;
+      };
+      await reactTreeWalker(
+        <TwirpContext.Provider value={ctx}>{component}</TwirpContext.Provider>,
+        visitor
       );
       console.log(" ==== DONE RENDERING %d ==== ", depth, pending);
       if (pending) {
