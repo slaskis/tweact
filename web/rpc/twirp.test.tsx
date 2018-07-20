@@ -57,6 +57,48 @@ test("simple ssr", async () => {
   expect(cache.store.size).toBe(1);
 });
 
+test("nested ssr", async () => {
+  const cache = new InMemoryCache<ListTodoResponse>();
+  const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {
+    async request(
+      _method: string,
+      _variables: Partial<ListTodoResponse>,
+      _options: any
+    ) {
+      console.log("mock client request");
+      return { todos: [] };
+    }
+  };
+
+  const App = () => (
+    <ListTodos>
+      {({ loading, error }) =>
+        error ? (
+          "ERROR"
+        ) : loading ? (
+          "LOADING"
+        ) : (
+          <ListTodos>
+            {({ loading, error }) =>
+              error ? "ERROR" : loading ? "LOADING" : "OK"
+            }
+          </ListTodos>
+        )
+      }
+    </ListTodos>
+  );
+  await renderState(client, cache, <App />);
+  expect(
+    renderer
+      .create(
+        <TwirpProvider value={{ client, cache }}>
+          <App />
+        </TwirpProvider>
+      )
+      .toJSON()
+  ).toMatchSnapshot();
+});
+
 test("lazy ssr", async () => {
   const cache = new InMemoryCache<ListTodoResponse>();
   const client: TwirpClient<ListTodoRequest, ListTodoResponse | undefined> = {

@@ -4,6 +4,8 @@ exports[`fail ssr 1`] = `"LOADING"`;
 
 exports[`lazy ssr 1`] = `"LOADING"`;
 
+exports[`nested ssr 1`] = `"OK"`;
+
 exports[`none 1`] = `<div />`;
 
 exports[`simple ssr 1`] = `"OK"`;
