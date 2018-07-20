@@ -1,8 +1,8 @@
 import React from "react";
-import Head from "components/head";
-import Nav from "components/nav";
-import { ListTodos, CreateTodo, RemoveTodo, Todo } from "rpc/TodoService";
-import { withTwirp } from "rpc/twirp";
+import Head from "../components/head";
+import Nav from "../components/nav";
+import withTwirp from "../components/withTwirp";
+import { ListTodos, CreateTodo, RemoveTodo, Todo } from "../rpc/TodoService";
 
 const App = () => (
   <div>
