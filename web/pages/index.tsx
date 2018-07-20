@@ -15,7 +15,7 @@ const App = () => (
         ) : error ? (
           <span>Error: {error.message}</span>
         ) : todos && todos.length ? (
-          <ul>{todos.map(t => <li key={t.id}>{t.title}</li>)}</ul>
+          <ul>{todos.map(t => <TodoRow key={t.id} {...t} />)}</ul>
         ) : (
           <span>No todos available</span>
         )
