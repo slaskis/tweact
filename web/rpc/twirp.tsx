@@ -339,7 +339,6 @@ export abstract class TwirpService<Req, Res> extends React.Component<
   }
 
   refetch = async (vars?: Partial<Req>) => {
-    console.log("refetch", this.as);
     // TODO store last used vars and use here?
     const { cache = undefined } = this.props.twirp || {};
     const variables = Object.assign({}, this.props.variables, vars);
@@ -348,7 +347,6 @@ export abstract class TwirpService<Req, Res> extends React.Component<
   };
 
   request = async (vars?: Partial<Req>): Promise<Res | undefined> => {
-    console.log("request", this.as);
     const { client = null, cache = undefined, keys = undefined } =
       this.props.twirp || {};
 
@@ -381,7 +379,6 @@ export abstract class TwirpService<Req, Res> extends React.Component<
       // revalidate the registered keys
       if (this.props.wait) {
         this.as.forEach(key => {
-          console.log("revalidating %s", key);
           if (keys) {
             const set = keys.get(key);
             if (set) {
@@ -394,7 +391,6 @@ export abstract class TwirpService<Req, Res> extends React.Component<
 
       return this.connector.data;
     } catch (error) {
-      console.log("twirp request exception", error);
       this.setState({
         error,
         loading: false
@@ -429,7 +425,6 @@ export const renderState = (
   const ctx = { client, cache };
   const render = async (depth = 0): Promise<void> => {
     if (depth < maxDepth) {
-      console.log(" ==== RENDERING TREE %d ==== ", depth);
       let pending = 0;
       const visitor = async (
         _element: React.ReactElement<any>,
@@ -455,12 +450,11 @@ export const renderState = (
         <TwirpContext.Provider value={ctx}>{component}</TwirpContext.Provider>,
         visitor
       );
-      console.log(" ==== DONE RENDERING %d ==== ", depth, pending);
       if (pending) {
         return render(depth + 1);
       }
     } else {
-      console.log("renderState reached max depth...");
+      console.warn("renderState reached max depth...");
     }
   };
   return render();
