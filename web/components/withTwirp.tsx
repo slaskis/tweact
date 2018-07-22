@@ -21,11 +21,9 @@ const withTwirp = (Component: React.ComponentClass | React.SFC) =>
       // only render state in ssr. let client side navigation
       // show loading states instead
       if (req) {
-        const client = new TwirpClient(prefix);
         try {
-          console.log(" -- APP RENDER STATE START");
+          const client = new TwirpClient(prefix);
           await renderState(client, cache, <Component />);
-          console.log(" -- APP RENDER STATE END");
         } catch (err) {
           console.error("renderState err", err);
         }
