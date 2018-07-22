@@ -8,7 +8,7 @@ const App = () => (
   <div>
     <Head title="Home" />
     <Nav />
-    <ListTodos>
+    <ListTodos as="hello1">
       {({ data: { todos }, error, loading }) =>
         loading ? (
           "Loading..."
@@ -22,7 +22,7 @@ const App = () => (
       }
     </ListTodos>
 
-    <ListTodos lazy>
+    <ListTodos as="hello2" lazy>
       {({ data: { todos }, error, loading }) =>
         loading ? (
           "Loading..."
@@ -36,7 +36,7 @@ const App = () => (
       }
     </ListTodos>
 
-    <CreateTodo wait>
+    <CreateTodo as={() => [Math.random() > 0.5 ? "hello1" : "hello2"]} wait>
       {({ data: { todo }, error, loading, update }) => (
         <form
           onSubmit={evt => {
@@ -60,7 +60,7 @@ const App = () => (
 );
 
 const TodoRow = ({ id, title }: Todo) => (
-  <RemoveTodo wait>
+  <RemoveTodo wait as={["hello1", "hello2"]}>
     {({ update, loading }) => (
       <li key={id}>
         <span>{title}</span>

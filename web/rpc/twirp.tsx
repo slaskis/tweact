@@ -104,11 +104,13 @@ interface TwirpServiceState<T> {
   readonly skipped: boolean;
 }
 interface TwirpServiceMethods<Req, Res> {
-  // TODO invalidate?
-  // TODO client?: TwirpClient<Req, Res>;
-  update: (variables?: Partial<Req>) => Promise<Res | undefined>;
+  update: UpdateFunc<Req, Res>;
 }
+type UpdateFunc<Req, Res> = (
+  variables?: Partial<Req>
+) => Promise<Res | undefined>;
 type SkipFunc<V> = (vars: V) => boolean;
+type AsFunc<V> = (vars: V) => string[];
 
 interface TwirpServiceProps<Req, Res> {
   /**
@@ -128,13 +130,19 @@ interface TwirpServiceProps<Req, Res> {
   /** Lazy load server side */
   lazy?: boolean;
 
-  /** Control if query should be skipped.
+  /**
+   * Control if query should be skipped.
    * Set to `true` and control the query using `refetch()`
    * or to a function which accepts the current variables
    * and returns a boolean controling if a request should
    * be made. Rendering will still happen, with a skipped flag
    */
   skip?: boolean | SkipFunc<Partial<Req>>;
+
+  /**
+   * Control if a query should be reloaded on `update`
+   */
+  as?: string | string[] | AsFunc<Partial<Req>>;
 
   /**
    * Fail by throwing an exception and letting the React error boundary
@@ -174,6 +182,7 @@ export const withTwirp = <Req, Res>(
 interface TwirpClientContext<Req, Res> {
   client?: TwirpClient<Req, Res>;
   cache?: TwirpCache<Res>;
+  keys?: Map<string, Set<UpdateFunc<Req, Res>>>;
 }
 
 const TwirpContext = React.createContext<TwirpClientContext<any, any>>({});
@@ -190,7 +199,8 @@ export const TwirpProvider = ({
       <TwirpContext.Provider
         value={{
           client: value.client || parent.client,
-          cache: value.cache || parent.cache
+          cache: value.cache || parent.cache,
+          keys: parent.keys || new Map()
         }}
         children={children}
       />
@@ -208,13 +218,22 @@ class TwirpConnector<Req, Res> {
     this.options = {};
   }
 
+  invalidate(variables: Partial<Req>, cache?: TwirpCache<Res>) {
+    const key = toKey(this.method, variables);
+    if (cache) {
+      cache.delete(key);
+    }
+  }
+
   request(
     client: TwirpClient<Req, Res>,
     variables: Partial<Req>,
     cache?: TwirpCache<Res>
   ): Promise<Res> {
     const key = toKey(this.method, variables);
-    this.data = cache && cache.get(key);
+    if (cache) {
+      this.data = cache.get(key);
+    }
     if (!this.data) {
       return client
         .request(this.method, variables, this.options)
@@ -226,6 +245,7 @@ class TwirpConnector<Req, Res> {
 
 const EmptyData = Object.freeze({});
 const EmptyVars = Object.freeze({});
+const EmptyKeys: string[] = [];
 
 export abstract class TwirpService<Req, Res> extends React.Component<
   TwirpServiceProps<Req, Res>,
@@ -267,9 +287,36 @@ export abstract class TwirpService<Req, Res> extends React.Component<
   }
 
   componentDidMount() {
-    if (!this.props.wait && this.state.data === EmptyData) {
-      this.request(this.props.variables);
+    if (!this.props.wait) {
+      if (this.state.data === EmptyData) {
+        this.request(this.props.variables);
+      }
+
+      // register in the cache `keys` map for invalidation
+      // when the same key has been updated in a `wait` component
+      this.as.forEach(key => {
+        if (this.props.twirp && this.props.twirp.keys && key) {
+          const set = this.props.twirp.keys.get(key) || new Set();
+          set.add(this.refetch);
+          this.props.twirp.keys.set(key, set);
+        }
+      });
     }
+  }
+
+  componentWillUnmount() {
+    // unregister from the cache `keys` map
+    this.as.forEach(key => {
+      if (this.props.twirp && this.props.twirp.keys) {
+        const set = this.props.twirp.keys.get(key);
+        if (set) {
+          set.delete(this.refetch);
+          if (set.size == 0) {
+            this.props.twirp.keys.delete(key);
+          }
+        }
+      }
+    });
   }
 
   get skipped() {
@@ -279,8 +326,31 @@ export abstract class TwirpService<Req, Res> extends React.Component<
     return this.props.skip == true;
   }
 
+  get as(): string[] {
+    if (typeof this.props.as == "function") {
+      return this.props.as(this.props.variables || EmptyVars);
+    } else if (Array.isArray(this.props.as)) {
+      return this.props.as;
+    } else if (this.props.as) {
+      return [this.props.as];
+    } else {
+      return EmptyKeys;
+    }
+  }
+
+  refetch = async (vars?: Partial<Req>) => {
+    console.log("refetch", this.as);
+    // TODO store last used vars and use here?
+    const { cache = undefined } = this.props.twirp || {};
+    const variables = Object.assign({}, this.props.variables, vars);
+    this.connector.invalidate(variables, cache);
+    return this.request();
+  };
+
   request = async (vars?: Partial<Req>): Promise<Res | undefined> => {
-    const { client = null, cache = undefined } = this.props.twirp || {};
+    console.log("request", this.as);
+    const { client = null, cache = undefined, keys = undefined } =
+      this.props.twirp || {};
 
     if (!client) {
       throw new Error("missing twirp client");
@@ -307,6 +377,21 @@ export abstract class TwirpService<Req, Res> extends React.Component<
         error: undefined,
         loading: false
       });
+
+      // revalidate the registered keys
+      if (this.props.wait) {
+        this.as.forEach(key => {
+          console.log("revalidating %s", key);
+          if (keys) {
+            const set = keys.get(key);
+            if (set) {
+              // TODO what about variables?
+              set.forEach(u => u());
+            }
+          }
+        });
+      }
+
       return this.connector.data;
     } catch (error) {
       console.log("twirp request exception", error);
