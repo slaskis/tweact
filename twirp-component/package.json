@@ -1,0 +1,46 @@
+{
+  "name": "@department/twirp-component",
+  "main": "dist/twirp-component.js",
+  "umd:main": "dist/twirp-component.umd.js",
+  "module": "dist/twirp-component.mjs",
+  "source": "src/twirp-component.js",
+  "scripts": {
+    "build": "microbundle",
+    "dev": "microbundle watch",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "react": "^16.4.0"
+  },
+  "dependencies": {
+    "react-tree-walker": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.1.3",
+    "@types/react-test-renderer": "^16.0.1",
+    "jest": "^23.2.0",
+    "microbundle": "^0.6.0",
+    "react": "^16.4.0",
+    "react-test-renderer": "^16.4.1",
+    "ts-jest": "^22.0.0",
+    "typescript": "^2.9.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/*.test.(ts|tsx|js)"
+    ]
+  }
+}
