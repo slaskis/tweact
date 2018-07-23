@@ -35,7 +35,6 @@ func read(r io.Reader) *plugin.CodeGeneratorRequest {
 }
 
 func gen(req *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorResponse {
-
 	resp := &plugin.CodeGeneratorResponse{}
 
 	for _, f := range req.GetProtoFile() {

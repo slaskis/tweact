@@ -1,6 +1,6 @@
 .SUFFIXES:
 
-SOURCE := $(shell find pkg cmd -name '*.go')
+SOURCE := $(shell find pkg cmd protoc-gen-tweact -name '*.go')
 
 build: bin/api
 	@: # shhh
