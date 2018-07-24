@@ -8,7 +8,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/slaskis/tweact/protoc-gen-tweact/generator"
-	"github.com/slaskis/tweact/protoc-gen-tweact/internal/typemap"
 )
 
 func main() {
@@ -38,15 +37,13 @@ func read(r io.Reader) *plugin.CodeGeneratorRequest {
 func gen(req *plugin.CodeGeneratorRequest) *plugin.CodeGeneratorResponse {
 	resp := &plugin.CodeGeneratorResponse{}
 
-	r := typemap.New(req.ProtoFile)
-
 	for _, f := range req.GetProtoFile() {
 		// skip google/protobuf/timestamp, we don't do any special serialization for jsonpb.
 		if *f.Name == "google/protobuf/timestamp.proto" {
 			continue
 		}
 
-		cf, err := generator.CreateClientAPI(f, r)
+		cf, err := generator.CreateClientAPI(f)
 		if err != nil {
 			resp.Error = proto.String(err.Error())
 			return resp
