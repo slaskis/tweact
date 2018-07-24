@@ -1,3 +1,5 @@
+// File comments can be useful too
+
 syntax = "proto3";
 
 package demo;
@@ -13,10 +15,23 @@ service DemoService {
 	rpc Echo (EchoRequest) returns (EchoResponse);
 }
 
+// TestEnum has a comment
+enum Test {
+	UNKNOWN = 0;
+
+	// So does this value
+	HELLO = 1;
+
+	THERE = 2; // and trailing
+}
+
+// EchoRequest only passes a message
 message EchoRequest {
 	string message = 1; // message to echo
 }
 
+
+// EchoResponse only contains a message
 message EchoResponse {
 	// message that was in the request
 	string message = 1;

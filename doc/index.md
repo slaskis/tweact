@@ -7,6 +7,7 @@
     - [EchoRequest](#demo.EchoRequest)
     - [EchoResponse](#demo.EchoResponse)
   
+    - [Test](#demo.Test)
   
   
     - [DemoService](#demo.DemoService)
@@ -41,7 +42,7 @@
 <a name="demo.EchoRequest"/>
 
 ### EchoRequest
-
+EchoRequest only passes a message
 
 
 | Field | Type | Label | Description |
@@ -56,7 +57,7 @@
 <a name="demo.EchoResponse"/>
 
 ### EchoResponse
-
+EchoResponse only contains a message
 
 
 | Field | Type | Label | Description |
@@ -68,6 +69,19 @@
 
 
  
+
+
+<a name="demo.Test"/>
+
+### Test
+TestEnum has a comment
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 |  |
+| HELLO | 1 | So does this value |
+| THERE | 2 | and trailing |
+
 
  
 
