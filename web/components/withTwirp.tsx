@@ -1,12 +1,13 @@
 import React from "react";
 import { NextContext } from "next";
+import "isomorphic-fetch";
 
 import {
   renderState,
   TwirpJSONClient as TwirpClient,
   TwirpProvider,
   InMemoryCache
-} from "../rpc/twirp";
+} from "@department/twirp-component";
 
 const prefix = "http://localhost:4000/twirp/";
 

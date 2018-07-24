@@ -10,7 +10,7 @@
     "next": "6.1.1",
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
-    "react-tree-walker": "^4.2.0"
+    "@department/twirp-component": "*"
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.42",
