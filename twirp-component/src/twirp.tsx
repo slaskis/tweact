@@ -1,5 +1,4 @@
 import React from "react";
-import fetch from "isomorphic-fetch";
 import reactTreeWalker from "react-tree-walker";
 
 export interface TwirpCache<Res> {

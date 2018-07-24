@@ -1,22 +1,17 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "es5",
     "jsx": "react",
-    "allowJs": true,
-    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "removeComments": false,
     "preserveConstEnums": true,
-    "sourceMap": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
+    "rootDir": "./src",
     "typeRoots": ["./node_modules/@types", "./types"],
     "lib": ["dom", "es2015", "es2016"],
-    "strict": true
-  },
-  "exclude": ["node_modules", "static"]
+    "strict": true,
+    "downlevelIteration": true
+  }
 }
