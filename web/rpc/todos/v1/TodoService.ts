@@ -21,11 +21,12 @@ export interface RemoveTodoRequest {
 export interface GetTodoRequest {
   id: string;
 }
-export interface ListTodosRequest {}
+export interface ListTodosRequest {
+}
 export enum TodoState {
   UNKNOWN = 0,
   ARCHIVED = 1,
-  ACTIVE = 2
+  ACTIVE = 2,
 }
 
 export const CreateTodo = withTwirp(
