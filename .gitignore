@@ -1,1 +1,4 @@
 bin/api
+node_modules/
+dist/
+.rpt2_cache/
