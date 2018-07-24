@@ -17,6 +17,10 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGenerator
 	var files []*plugin.CodeGeneratorResponse_File
 	pkg := d.GetPackage()
 
+	// TODO add comments
+	// https://github.com/twitchtv/twirp/blob/master/internal/gen/typemap/typemap.go
+	// https://github.com/pseudomuto/protokit/blob/master/parser.go
+
 	// services are separate files and contains methods
 	for _, svc := range d.Service {
 		buf := bytes.NewBuffer(nil)
@@ -62,6 +66,7 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGenerator
 				OutputType: removePkg(*met.OutputType),
 				Name:       *met.Name,
 			})
+
 			if err != nil {
 				return nil, err
 			}
@@ -127,4 +132,8 @@ func removePkg(s string) string {
 
 func isRepeated(field *descriptor.FieldDescriptorProto) bool {
 	return field.Label != nil && *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED
+}
+
+func scrub(str string) string {
+	return strings.TrimSpace(strings.Replace(str, "\n ", "\n", -1))
 }

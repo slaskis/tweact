@@ -32,7 +32,12 @@ import url "net/url"
 // DemoService Interface
 // =====================
 
+// DemoService shows a very simple service with only
+// an Echo method.
 type DemoService interface {
+	// Echo responds with the message passed into the
+	// request. Useful for testing and as a minimal
+	// example.
 	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
 }
 

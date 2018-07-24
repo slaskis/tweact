@@ -46,7 +46,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message | [string](#string) |  |  |
+| message | [string](#string) |  | message to echo |
 
 
 
@@ -61,7 +61,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| message | [string](#string) |  |  |
+| message | [string](#string) |  | message that was in the request |
 
 
 
@@ -77,11 +77,12 @@
 <a name="demo.DemoService"/>
 
 ### DemoService
-
+DemoService shows a very simple service with only
+an Echo method.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Echo | [EchoRequest](#demo.EchoRequest) | [EchoResponse](#demo.EchoRequest) |  |
+| Echo | [EchoRequest](#demo.EchoRequest) | [EchoResponse](#demo.EchoRequest) | Echo responds with the message passed into the request. Useful for testing and as a minimal example. |
 
  
 

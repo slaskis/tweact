@@ -4,14 +4,20 @@ package demo;
 
 option go_package = "demo";
 
+// DemoService shows a very simple service with only
+// an Echo method.
 service DemoService {
+	// Echo responds with the message passed into the
+	// request. Useful for testing and as a minimal
+	// example.
 	rpc Echo (EchoRequest) returns (EchoResponse);
 }
 
 message EchoRequest {
-	string message = 1;
+	string message = 1; // message to echo
 }
 
 message EchoResponse {
+	// message that was in the request
 	string message = 1;
 }

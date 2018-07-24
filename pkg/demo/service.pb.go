@@ -29,7 +29,7 @@ func (m *EchoRequest) Reset()         { *m = EchoRequest{} }
 func (m *EchoRequest) String() string { return proto.CompactTextString(m) }
 func (*EchoRequest) ProtoMessage()    {}
 func (*EchoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_8f411212db082352, []int{0}
+	return fileDescriptor_service_1ea0cbb46a3ad792, []int{0}
 }
 func (m *EchoRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EchoRequest.Unmarshal(m, b)
@@ -57,6 +57,7 @@ func (m *EchoRequest) GetMessage() string {
 }
 
 type EchoResponse struct {
+	// message that was in the request
 	Message              string   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -67,7 +68,7 @@ func (m *EchoResponse) Reset()         { *m = EchoResponse{} }
 func (m *EchoResponse) String() string { return proto.CompactTextString(m) }
 func (*EchoResponse) ProtoMessage()    {}
 func (*EchoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_8f411212db082352, []int{1}
+	return fileDescriptor_service_1ea0cbb46a3ad792, []int{1}
 }
 func (m *EchoResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EchoResponse.Unmarshal(m, b)
@@ -99,9 +100,9 @@ func init() {
 	proto.RegisterType((*EchoResponse)(nil), "demo.EchoResponse")
 }
 
-func init() { proto.RegisterFile("demo/service.proto", fileDescriptor_service_8f411212db082352) }
+func init() { proto.RegisterFile("demo/service.proto", fileDescriptor_service_1ea0cbb46a3ad792) }
 
-var fileDescriptor_service_8f411212db082352 = []byte{
+var fileDescriptor_service_1ea0cbb46a3ad792 = []byte{
 	// 139 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4a, 0x49, 0xcd, 0xcd,
 	0xd7, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62,
