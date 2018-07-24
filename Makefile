@@ -41,4 +41,4 @@ bin/web:
 	cd web && yarn build && yarn pkg
 
 doc/index.html: $(RPC)
-	retool do protoc -I pkg:rpc:vendor --doc_out=./doc $^
+	retool do protoc -I pkg:rpc:vendor --doc_out=./doc --doc_opt=markdown,index.md $^
