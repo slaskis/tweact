@@ -34,11 +34,6 @@ interface TwirpClientContext<Req, Res> {
 
 const TwirpContext = React.createContext<TwirpClientContext<any, any>>({});
 
-interface TwirpRenderCallback<Req, Res> {
-  data: Res | Partial<Res>;
-  update: UpdateFunc<Req>;
-}
-
 type UpdateFunc<Req> = (variables?: Partial<Req>) => void;
 
 interface TwirpServiceProps<Req, Res> {
@@ -46,7 +41,10 @@ interface TwirpServiceProps<Req, Res> {
   variables?: Req | Partial<Req>;
   cache?: Cache;
   client?: TwirpClient<Req, Res>;
-  children: (r: TwirpRenderCallback<Req, Res>) => React.ReactNode;
+  children: (
+    data: Res | Partial<Res>,
+    update: UpdateFunc<Req>
+  ) => React.ReactNode;
 }
 
 const toKey = (method: string, req: any) => method + ":" + JSON.stringify(req);
@@ -107,12 +105,7 @@ export abstract class TwirpService<Req, Res> extends React.Component<
   render() {
     return (
       <TwirpContext.Consumer>
-        {twirp =>
-          this.props.children({
-            data: this.data(twirp),
-            update: this.update
-          })
-        }
+        {twirp => this.props.children(this.data(twirp), this.update)}
       </TwirpContext.Consumer>
     );
   }
