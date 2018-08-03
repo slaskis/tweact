@@ -17,7 +17,9 @@
   "devDependencies": {
     "@types/react": "^16.4.6",
     "microbundle": "^0.6.0",
-    "react": "^16.4.0",
+    "react": "./vendor/react",
+    "react-dom": "./vendor/react-dom",
+    "simple-cache-provider": "./vendor/simple-cache-provider",
     "typescript": "^2.9.2"
   }
 }
