@@ -15,7 +15,7 @@ const App = () => (
     <Nav />
     <Placeholder delayMs={1000} fallback={<span>Loading...</span>}>
       <ListTodos>
-        {({ data: { todos } }) =>
+        {({ todos }) =>
           todos && todos.length ? (
             <ul>{todos.map(t => <TodoRow key={t.id} {...t} />)}</ul>
           ) : (
@@ -25,7 +25,7 @@ const App = () => (
       </ListTodos>
 
       <CreateTodo wait>
-        {({ data: { todo }, update }) => (
+        {({ todo }, update) => (
           <form
             onSubmit={evt => {
               evt.preventDefault();
@@ -49,7 +49,7 @@ const App = () => (
 
 const TodoRow = ({ id, title }: Todo) => (
   <RemoveTodo wait>
-    {({ update }) => (
+    {({}, update) => (
       <li key={id}>
         <span>{title}</span>
         <button onClick={() => update({ id })}>Remove</button>

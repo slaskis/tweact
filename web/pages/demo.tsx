@@ -10,7 +10,7 @@ const Demo = () => (
     <Nav />
     <Placeholder delayMs={1000} fallback={<span>Loading...</span>}>
       <Echo wait>
-        {({ data: { message }, update }) => (
+        {({ message }, update) => (
           <form
             onSubmit={evt => {
               evt.preventDefault();
