@@ -618,6 +618,9 @@
     lodash "^4.2.0"
     to-fast-properties "^2.0.0"
 
+"@department/twirp-component@../twirp-component":
+  version "2.0.0"
+
 "@types/jest@^23.1.3":
   version "23.1.3"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-23.1.3.tgz#4db19b2e7627dc254bbed5781b5609c621b5ad8e"
@@ -4475,7 +4478,7 @@ prop-types@15.6.0:
     loose-envify "^1.3.1"
     object-assign "^4.1.1"
 
-prop-types@^15.6.0:
+prop-types@^15.6.0, prop-types@^15.6.2:
   version "15.6.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.2.tgz#05d5ca77b4453e985d60fc7ff8c859094a497102"
   dependencies:
@@ -4577,14 +4580,12 @@ rc@^1.0.1, rc@^1.1.6, rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-dom@^16.4.0:
+react-dom@./vendor/react-dom:
   version "16.4.1"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.4.1.tgz#7f8b0223b3a5fbe205116c56deb85de32685dad6"
   dependencies:
-    fbjs "^0.8.16"
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
-    prop-types "^15.6.0"
+    prop-types "^15.6.2"
 
 react-is@^16.4.1:
   version "16.4.1"
@@ -4603,18 +4604,12 @@ react-test-renderer@^16.4.1:
     prop-types "^15.6.0"
     react-is "^16.4.1"
 
-react-tree-walker@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/react-tree-walker/-/react-tree-walker-4.2.0.tgz#bb2ac9b1219e1d39e5d11c5ecfa6fe5ea63f81c0"
-
-react@^16.4.0:
+react@./vendor/react:
   version "16.4.1"
-  resolved "https://registry.yarnpkg.com/react/-/react-16.4.1.tgz#de51ba5764b5dbcd1f9079037b862bd26b82fe32"
   dependencies:
-    fbjs "^0.8.16"
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
-    prop-types "^15.6.0"
+    prop-types "^15.6.2"
 
 read-pkg-up@^1.0.1:
   version "1.0.1"
@@ -5020,6 +5015,9 @@ shellwords@^0.1.1:
 signal-exit@^3.0.0, signal-exit@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
+
+simple-cache-provider@./vendor/simple-cache-provider:
+  version "0.7.0"
 
 sisteransi@^0.1.1:
   version "0.1.1"

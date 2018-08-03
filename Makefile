@@ -10,6 +10,9 @@ build: bin/api
 dev:
 	@CompileDaemon \
 		-exclude-dir web \
+		-exclude-dir twirp-component \
+		-exclude-dir doc \
+		-exclude-dir rpc \
 		-build make \
 		-command bin/api
 .PHONY: dev
@@ -35,7 +38,7 @@ _tools/bin/%: $(SOURCE)
 	go build -o $@ $*/main.go
 
 bin/api: $(SOURCE)
-	go build -o $@ cmd/$*/$*.go
+	go build -o $@ cmd/api/api.go
 
 bin/web:
 	cd web && yarn build && yarn pkg
