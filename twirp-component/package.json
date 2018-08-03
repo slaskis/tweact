@@ -1,24 +1,22 @@
 {
   "name": "@department/twirp-component",
   "main": "dist/twirp.js",
+  "version": "2.0.0",
   "module": "dist/twirp.mjs",
   "source": "src/twirp.tsx",
   "license": "MIT",
   "scripts": {
-    "build": "microbundle --target browser --external fetch,react-tree-walker,react",
+    "build": "microbundle --target browser --external fetch,react,simple-cache-provider",
     "dev": "microbundle watch"
   },
   "peerDependencies": {
-    "react": "^16.4.0"
-  },
-  "dependencies": {
-    "react-tree-walker": "^4.2.0"
+    "react": "^16.4.0",
+    "simple-cache-provider": "*"
   },
   "devDependencies": {
     "@types/react": "^16.4.6",
     "microbundle": "^0.6.0",
     "react": "./vendor/react",
-    "react-dom": "./vendor/react-dom",
     "simple-cache-provider": "./vendor/simple-cache-provider",
     "typescript": "^2.9.2"
   }
