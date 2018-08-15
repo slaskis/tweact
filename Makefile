@@ -7,8 +7,9 @@ build: bin/api
 	@: # shhh
 .PHONY: build
 
+
 dev:
-	@CompileDaemon \
+	@retool do CompileDaemon \
 		-exclude-dir web \
 		-build make \
 		-command bin/api

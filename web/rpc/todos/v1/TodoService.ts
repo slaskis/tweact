@@ -4,41 +4,41 @@
 import { withTwirp, TwirpService } from "@department/twirp-component";
 
 export interface Todo {
-	
+
   id: string;
-	
+
   title: string;
-	
+
   state: TodoState;
 }
 export interface TodoResponse {
-	
+
   todo: Todo;
 }
 export interface ListTodoResponse {
-	
+
   todos: Todo[];
 }
 export interface CreateTodoRequest {
-	
+
   title: string;
 }
 export interface RemoveTodoRequest {
-	
+
   id: string;
 }
 export interface GetTodoRequest {
-	
+
   id: string;
 }
 export interface ListTodosRequest {
 }
 export enum TodoState {
-  
+
   UNKNOWN = 0,
-  
+
   ARCHIVED = 1,
-  
+
   ACTIVE = 2,
 }
 

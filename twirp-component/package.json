@@ -3,6 +3,7 @@
   "main": "dist/twirp.js",
   "module": "dist/twirp.mjs",
   "source": "src/twirp.tsx",
+  "version": "0.1.0",
   "license": "MIT",
   "scripts": {
     "build": "microbundle --target browser --external fetch,react-tree-walker,react",
