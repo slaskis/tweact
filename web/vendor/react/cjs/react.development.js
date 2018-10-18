@@ -1,7 +1,7 @@
-/** @license React v16.4.1
+/** @license React v16.6.0-alpha.8af6728
  * react.development.js
  *
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,7 +20,7 @@ var checkPropTypes = require('prop-types/checkPropTypes');
 
 // TODO: this is special because it gets imported during build.
 
-var ReactVersion = '16.4.1';
+var ReactVersion = '16.6.0-alpha.8af6728';
 
 // The Symbol used to tag the ReactElement-like types. If there is no native Symbol
 // nor polyfill, then a plain number is used for performance.
@@ -33,15 +33,16 @@ var REACT_STRICT_MODE_TYPE = hasSymbol ? Symbol.for('react.strict_mode') : 0xeac
 var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
 var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
 var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
-var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
+var REACT_CONCURRENT_MODE_TYPE = hasSymbol ? Symbol.for('react.concurrent_mode') : 0xeacf;
 var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
-var REACT_PLACEHOLDER_TYPE = hasSymbol ? Symbol.for('react.placeholder') : 0xead1;
+var REACT_SUSPENSE_TYPE = hasSymbol ? Symbol.for('react.suspense') : 0xead1;
+var REACT_PURE_TYPE = hasSymbol ? Symbol.for('react.pure') : 0xead3;
 
 var MAYBE_ITERATOR_SYMBOL = typeof Symbol === 'function' && Symbol.iterator;
 var FAUX_ITERATOR_SYMBOL = '@@iterator';
 
 function getIteratorFn(maybeIterable) {
-  if (maybeIterable === null || typeof maybeIterable === 'undefined') {
+  if (maybeIterable === null || typeof maybeIterable !== 'object') {
     return null;
   }
   var maybeIterator = MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL] || maybeIterable[FAUX_ITERATOR_SYMBOL];
@@ -94,39 +95,7 @@ function invariant(condition, format, a, b, c, d, e, f) {
 }
 
 // Relying on the `invariant()` implementation lets us
-// have preserve the format and params in the www builds.
-
-// Exports ReactDOM.createRoot
-
-
-// Experimental error-boundary API that can recover from errors within a single
-// render phase
-
-// Suspense
-var enableSuspense = true;
-// Helps identify side effects in begin-phase lifecycle hooks and setState reducers:
-
-
-// In some cases, StrictMode should also double-render lifecycles.
-// This can be confusing for tests though,
-// And it can be bad for performance in production.
-// This feature flag can be used to control the behavior:
-
-
-// To preserve the "Pause on caught exceptions" behavior of the debugger, we
-// replay the begin phase of a failed component inside invokeGuardedCallback.
-
-
-// Warn about deprecated, async-unsafe lifecycles; relates to RFC #6:
-
-
-// Warn about legacy context API
-
-
-// Gather advanced timing metrics for Profiler subtrees.
-
-
-// Only used in www builds.
+// preserve the format and params in the www builds.
 
 /**
  * Forked from fbjs/warning:
@@ -199,23 +168,71 @@ var warningWithoutStack = function () {};
     if (format === undefined) {
       throw new Error('`warningWithoutStack(condition, format, ...args)` requires a warning ' + 'message argument');
     }
+    if (args.length > 8) {
+      // Check before the condition to catch violations early.
+      throw new Error('warningWithoutStack() currently supports at most 8 arguments.');
+    }
     if (condition) {
       return;
     }
     if (typeof console !== 'undefined') {
-      var _console;
+      var _args$map = args.map(function (item) {
+        return '' + item;
+      }),
+          a = _args$map[0],
+          b = _args$map[1],
+          c = _args$map[2],
+          d = _args$map[3],
+          e = _args$map[4],
+          f = _args$map[5],
+          g = _args$map[6],
+          h = _args$map[7];
 
-      (_console = console).error.apply(_console, ['Warning: ' + format].concat(args));
+      var message = 'Warning: ' + format;
+
+      // We intentionally don't use spread (or .apply) because it breaks IE9:
+      // https://github.com/facebook/react/issues/13610
+      switch (args.length) {
+        case 0:
+          console.error(message);
+          break;
+        case 1:
+          console.error(message, a);
+          break;
+        case 2:
+          console.error(message, a, b);
+          break;
+        case 3:
+          console.error(message, a, b, c);
+          break;
+        case 4:
+          console.error(message, a, b, c, d);
+          break;
+        case 5:
+          console.error(message, a, b, c, d, e);
+          break;
+        case 6:
+          console.error(message, a, b, c, d, e, f);
+          break;
+        case 7:
+          console.error(message, a, b, c, d, e, f, g);
+          break;
+        case 8:
+          console.error(message, a, b, c, d, e, f, g, h);
+          break;
+        default:
+          throw new Error('warningWithoutStack() currently supports at most 8 arguments.');
+      }
     }
     try {
       // --- Welcome to debugging React ---
       // This error was thrown as a convenience so that you can use this stack
       // to find the callsite that caused this warning to fire.
       var argIndex = 0;
-      var message = 'Warning: ' + format.replace(/%s/g, function () {
+      var _message = 'Warning: ' + format.replace(/%s/g, function () {
         return args[argIndex++];
       });
-      throw new Error(message);
+      throw new Error(_message);
     } catch (x) {}
   };
 }
@@ -444,9 +461,47 @@ var ReactCurrentOwner = {
   currentDispatcher: null
 };
 
+var BEFORE_SLASH_RE = /^(.*)[\\\/]/;
+
 var describeComponentFrame = function (name, source, ownerName) {
-  return '\n    in ' + (name || 'Unknown') + (source ? ' (at ' + source.fileName.replace(/^.*[\\\/]/, '') + ':' + source.lineNumber + ')' : ownerName ? ' (created by ' + ownerName + ')' : '');
+  var sourceInfo = '';
+  if (source) {
+    var path = source.fileName;
+    var fileName = path.replace(BEFORE_SLASH_RE, '');
+    {
+      // In DEV, include code for a common special case:
+      // prefer "folder/index.js" instead of just "index.js".
+      if (/^index\./.test(fileName)) {
+        var match = path.match(BEFORE_SLASH_RE);
+        if (match) {
+          var pathBeforeSlash = match[1];
+          if (pathBeforeSlash) {
+            var folderName = pathBeforeSlash.replace(BEFORE_SLASH_RE, '');
+            fileName = folderName + '/' + fileName;
+          }
+        }
+      }
+    }
+    sourceInfo = ' (at ' + fileName + ':' + source.lineNumber + ')';
+  } else if (ownerName) {
+    sourceInfo = ' (created by ' + ownerName + ')';
+  }
+  return '\n    in ' + (name || 'Unknown') + sourceInfo;
 };
+
+var Resolved = 1;
+
+
+
+
+function refineResolvedThenable(thenable) {
+  return thenable._reactStatus === Resolved ? thenable._reactResult : null;
+}
+
+function getWrappedName(outerType, innerType, wrapperName) {
+  var functionName = innerType.displayName || innerType.name || '';
+  return outerType.displayName || (functionName !== '' ? wrapperName + '(' + functionName + ')' : wrapperName);
+}
 
 function getComponentName(type) {
   if (type == null) {
@@ -465,8 +520,8 @@ function getComponentName(type) {
     return type;
   }
   switch (type) {
-    case REACT_ASYNC_MODE_TYPE:
-      return 'AsyncMode';
+    case REACT_CONCURRENT_MODE_TYPE:
+      return 'ConcurrentMode';
     case REACT_FRAGMENT_TYPE:
       return 'Fragment';
     case REACT_PORTAL_TYPE:
@@ -475,8 +530,8 @@ function getComponentName(type) {
       return 'Profiler';
     case REACT_STRICT_MODE_TYPE:
       return 'StrictMode';
-    case REACT_PLACEHOLDER_TYPE:
-      return 'Placeholder';
+    case REACT_SUSPENSE_TYPE:
+      return 'Suspense';
   }
   if (typeof type === 'object') {
     switch (type.$$typeof) {
@@ -485,9 +540,16 @@ function getComponentName(type) {
       case REACT_PROVIDER_TYPE:
         return 'Context.Provider';
       case REACT_FORWARD_REF_TYPE:
-        var renderFn = type.render;
-        var functionName = renderFn.displayName || renderFn.name || '';
-        return functionName !== '' ? 'ForwardRef(' + functionName + ')' : 'ForwardRef';
+        return getWrappedName(type, type.render, 'ForwardRef');
+      case REACT_PURE_TYPE:
+        return getWrappedName(type, type.render, 'Pure');
+    }
+    if (typeof type.then === 'function') {
+      var thenable = type;
+      var resolvedThenable = refineResolvedThenable(thenable);
+      if (resolvedThenable) {
+        return getComponentName(resolvedThenable);
+      }
     }
   }
   return null;
@@ -773,14 +835,12 @@ function createElement(type, config, children) {
   }
   {
     if (key || ref) {
-      if (typeof props.$$typeof === 'undefined' || props.$$typeof !== REACT_ELEMENT_TYPE) {
-        var displayName = typeof type === 'function' ? type.displayName || type.name || 'Unknown' : type;
-        if (key) {
-          defineKeyPropWarningGetter(props, displayName);
-        }
-        if (ref) {
-          defineRefPropWarningGetter(props, displayName);
-        }
+      var displayName = typeof type === 'function' ? type.displayName || type.name || 'Unknown' : type;
+      if (key) {
+        defineKeyPropWarningGetter(props, displayName);
+      }
+      if (ref) {
+        defineRefPropWarningGetter(props, displayName);
       }
     }
   }
@@ -1204,12 +1264,6 @@ function onlyChild(children) {
   return children;
 }
 
-function readContext(context, observedBits) {
-  var dispatcher = ReactCurrentOwner.currentDispatcher;
-  !(dispatcher !== null) ? invariant(false, 'Context.unstable_read(): Context can only be read while React is rendering, e.g. inside the render method or getDerivedStateFromProps.') : void 0;
-  return dispatcher.readContext(context, observedBits);
-}
-
 function createContext(defaultValue, calculateChangedBits) {
   if (calculateChangedBits === undefined) {
     calculateChangedBits = null;
@@ -1229,20 +1283,71 @@ function createContext(defaultValue, calculateChangedBits) {
     // Secondary renderers store their context values on separate fields.
     _currentValue: defaultValue,
     _currentValue2: defaultValue,
-    _changedBits: 0,
-    _changedBits2: 0,
     // These are circular
     Provider: null,
-    Consumer: null,
-    unstable_read: null
+    Consumer: null
   };
 
   context.Provider = {
     $$typeof: REACT_PROVIDER_TYPE,
     _context: context
   };
-  context.Consumer = context;
-  context.unstable_read = readContext.bind(null, context);
+
+  var hasWarnedAboutUsingNestedContextConsumers = false;
+  var hasWarnedAboutUsingConsumerProvider = false;
+
+  {
+    // A separate object, but proxies back to the original context object for
+    // backwards compatibility. It has a different $$typeof, so we can properly
+    // warn for the incorrect usage of Context as a Consumer.
+    var Consumer = {
+      $$typeof: REACT_CONTEXT_TYPE,
+      _context: context,
+      _calculateChangedBits: context._calculateChangedBits
+    };
+    // $FlowFixMe: Flow complains about not setting a value, which is intentional here
+    Object.defineProperties(Consumer, {
+      Provider: {
+        get: function () {
+          if (!hasWarnedAboutUsingConsumerProvider) {
+            hasWarnedAboutUsingConsumerProvider = true;
+            warning$1(false, 'Rendering <Context.Consumer.Provider> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Provider> instead?');
+          }
+          return context.Provider;
+        },
+        set: function (_Provider) {
+          context.Provider = _Provider;
+        }
+      },
+      _currentValue: {
+        get: function () {
+          return context._currentValue;
+        },
+        set: function (_currentValue) {
+          context._currentValue = _currentValue;
+        }
+      },
+      _currentValue2: {
+        get: function () {
+          return context._currentValue2;
+        },
+        set: function (_currentValue2) {
+          context._currentValue2 = _currentValue2;
+        }
+      },
+      Consumer: {
+        get: function () {
+          if (!hasWarnedAboutUsingNestedContextConsumers) {
+            hasWarnedAboutUsingNestedContextConsumers = true;
+            warning$1(false, 'Rendering <Context.Consumer.Consumer> is not supported and will be removed in ' + 'a future major release. Did you mean to render <Context.Consumer> instead?');
+          }
+          return context.Consumer;
+        }
+      }
+    });
+    // $FlowFixMe: Flow complains about missing properties because it doesn't understand defineProperty
+    context.Consumer = Consumer;
+  }
 
   {
     context._currentRenderer = null;
@@ -1252,12 +1357,32 @@ function createContext(defaultValue, calculateChangedBits) {
   return context;
 }
 
+function lazy(ctor) {
+  var thenable = null;
+  return {
+    then: function (resolve, reject) {
+      if (thenable === null) {
+        // Lazily create thenable by wrapping in an extra thenable.
+        thenable = ctor();
+        ctor = null;
+      }
+      return thenable.then(resolve, reject);
+    },
+
+    // React uses these fields to store the result.
+    _reactStatus: -1,
+    _reactResult: null
+  };
+}
+
 function forwardRef(render) {
   {
     if (typeof render !== 'function') {
       warningWithoutStack$1(false, 'forwardRef requires a render function but was given %s.', render === null ? 'null' : typeof render);
     } else {
-      !(render.length === 2) ? warningWithoutStack$1(false, 'forwardRef render functions accept two parameters: props and ref. ' + 'Did you forget to use the ref parameter?') : void 0;
+      !(
+      // Do not warn for 0 arguments because it could be due to usage of the 'arguments' object
+      render.length === 0 || render.length === 2) ? warningWithoutStack$1(false, 'forwardRef render functions accept exactly two parameters: props and ref. %s', render.length === 1 ? 'Did you forget to use the ref parameter?' : 'Any additional parameter will be undefined.') : void 0;
     }
 
     if (render != null) {
@@ -1271,10 +1396,28 @@ function forwardRef(render) {
   };
 }
 
+function pure(render, compare) {
+  {
+    if (typeof render !== 'function') {
+      warningWithoutStack$1(false, 'pure: The first argument must be a function component. Instead ' + 'received: %s', render === null ? 'null' : typeof render);
+    } else {
+      var prototype = render.prototype;
+      if (prototype && prototype.isReactComponent) {
+        warningWithoutStack$1(false, 'pure: The first argument must be a function component. Classes ' + 'are not supported. Use React.PureComponent instead.');
+      }
+    }
+  }
+  return {
+    $$typeof: REACT_PURE_TYPE,
+    render: render,
+    compare: compare === undefined ? null : compare
+  };
+}
+
 function isValidElementType(type) {
   return typeof type === 'string' || typeof type === 'function' ||
   // Note: its typeof might be other than 'symbol' or 'number' if it's a polyfill.
-  type === REACT_FRAGMENT_TYPE || type === REACT_ASYNC_MODE_TYPE || type === REACT_PROFILER_TYPE || type === REACT_STRICT_MODE_TYPE || type === REACT_PLACEHOLDER_TYPE || typeof type === 'object' && type !== null && (type.$$typeof === REACT_PROVIDER_TYPE || type.$$typeof === REACT_CONTEXT_TYPE || type.$$typeof === REACT_FORWARD_REF_TYPE);
+  type === REACT_FRAGMENT_TYPE || type === REACT_CONCURRENT_MODE_TYPE || type === REACT_PROFILER_TYPE || type === REACT_STRICT_MODE_TYPE || type === REACT_SUSPENSE_TYPE || typeof type === 'object' && type !== null && (typeof type.then === 'function' || type.$$typeof === REACT_PURE_TYPE || type.$$typeof === REACT_PROVIDER_TYPE || type.$$typeof === REACT_CONTEXT_TYPE || type.$$typeof === REACT_FORWARD_REF_TYPE);
 }
 
 /**
@@ -1422,13 +1565,13 @@ function validatePropTypes(element) {
   var name = void 0,
       propTypes = void 0;
   if (typeof type === 'function') {
-    // Class or functional component
+    // Class or function component
     name = type.displayName || type.name;
     propTypes = type.propTypes;
   } else if (typeof type === 'object' && type !== null && type.$$typeof === REACT_FORWARD_REF_TYPE) {
     // ForwardRef
     var functionName = type.render.displayName || type.render.name || '';
-    name = functionName !== '' ? 'ForwardRef(' + functionName + ')' : 'ForwardRef';
+    name = type.displayName || (functionName !== '' ? 'ForwardRef(' + functionName + ')' : 'ForwardRef');
     propTypes = type.propTypes;
   } else {
     return;
@@ -1574,10 +1717,13 @@ var React = {
 
   createContext: createContext,
   forwardRef: forwardRef,
+  lazy: lazy,
+  pure: pure,
 
   Fragment: REACT_FRAGMENT_TYPE,
   StrictMode: REACT_STRICT_MODE_TYPE,
-  unstable_AsyncMode: REACT_ASYNC_MODE_TYPE,
+  unstable_ConcurrentMode: REACT_CONCURRENT_MODE_TYPE,
+  unstable_Suspense: REACT_SUSPENSE_TYPE,
   unstable_Profiler: REACT_PROFILER_TYPE,
 
   createElement: createElementWithValidation,
@@ -1590,10 +1736,6 @@ var React = {
   __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: ReactSharedInternals
 };
 
-if (enableSuspense) {
-  React.Placeholder = REACT_PLACEHOLDER_TYPE;
-}
-
 
 
 var React$2 = Object.freeze({
@@ -1604,7 +1746,7 @@ var React$3 = ( React$2 && React ) || React$2;
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest.
-var react = React$3.default ? React$3.default : React$3;
+var react = React$3.default || React$3;
 
 module.exports = react;
   })();

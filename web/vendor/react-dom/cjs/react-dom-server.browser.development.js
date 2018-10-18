@@ -1,7 +1,7 @@
-/** @license React v16.4.1
+/** @license React v16.6.0-alpha.8af6728
  * react-dom-server.browser.development.js
  *
- * Copyright (c) 2013-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -62,11 +62,11 @@ function invariant(condition, format, a, b, c, d, e, f) {
 }
 
 // Relying on the `invariant()` implementation lets us
-// have preserve the format and params in the www builds.
+// preserve the format and params in the www builds.
 
 // TODO: this is special because it gets imported during build.
 
-var ReactVersion = '16.4.1';
+var ReactVersion = '16.6.0-alpha.8af6728';
 
 /**
  * Similar to invariant but only logs a warning if the condition is not met.
@@ -86,23 +86,71 @@ var warningWithoutStack = function () {};
     if (format === undefined) {
       throw new Error('`warningWithoutStack(condition, format, ...args)` requires a warning ' + 'message argument');
     }
+    if (args.length > 8) {
+      // Check before the condition to catch violations early.
+      throw new Error('warningWithoutStack() currently supports at most 8 arguments.');
+    }
     if (condition) {
       return;
     }
     if (typeof console !== 'undefined') {
-      var _console;
+      var _args$map = args.map(function (item) {
+        return '' + item;
+      }),
+          a = _args$map[0],
+          b = _args$map[1],
+          c = _args$map[2],
+          d = _args$map[3],
+          e = _args$map[4],
+          f = _args$map[5],
+          g = _args$map[6],
+          h = _args$map[7];
 
-      (_console = console).error.apply(_console, ['Warning: ' + format].concat(args));
+      var message = 'Warning: ' + format;
+
+      // We intentionally don't use spread (or .apply) because it breaks IE9:
+      // https://github.com/facebook/react/issues/13610
+      switch (args.length) {
+        case 0:
+          console.error(message);
+          break;
+        case 1:
+          console.error(message, a);
+          break;
+        case 2:
+          console.error(message, a, b);
+          break;
+        case 3:
+          console.error(message, a, b, c);
+          break;
+        case 4:
+          console.error(message, a, b, c, d);
+          break;
+        case 5:
+          console.error(message, a, b, c, d, e);
+          break;
+        case 6:
+          console.error(message, a, b, c, d, e, f);
+          break;
+        case 7:
+          console.error(message, a, b, c, d, e, f, g);
+          break;
+        case 8:
+          console.error(message, a, b, c, d, e, f, g, h);
+          break;
+        default:
+          throw new Error('warningWithoutStack() currently supports at most 8 arguments.');
+      }
     }
     try {
       // --- Welcome to debugging React ---
       // This error was thrown as a convenience so that you can use this stack
       // to find the callsite that caused this warning to fire.
       var argIndex = 0;
-      var message = 'Warning: ' + format.replace(/%s/g, function () {
+      var _message = 'Warning: ' + format.replace(/%s/g, function () {
         return args[argIndex++];
       });
-      throw new Error(message);
+      throw new Error(_message);
     } catch (x) {}
   };
 }
@@ -120,9 +168,24 @@ var REACT_STRICT_MODE_TYPE = hasSymbol ? Symbol.for('react.strict_mode') : 0xeac
 var REACT_PROFILER_TYPE = hasSymbol ? Symbol.for('react.profiler') : 0xead2;
 var REACT_PROVIDER_TYPE = hasSymbol ? Symbol.for('react.provider') : 0xeacd;
 var REACT_CONTEXT_TYPE = hasSymbol ? Symbol.for('react.context') : 0xeace;
-var REACT_ASYNC_MODE_TYPE = hasSymbol ? Symbol.for('react.async_mode') : 0xeacf;
+var REACT_CONCURRENT_MODE_TYPE = hasSymbol ? Symbol.for('react.concurrent_mode') : 0xeacf;
 var REACT_FORWARD_REF_TYPE = hasSymbol ? Symbol.for('react.forward_ref') : 0xead0;
-var REACT_PLACEHOLDER_TYPE = hasSymbol ? Symbol.for('react.placeholder') : 0xead1;
+var REACT_SUSPENSE_TYPE = hasSymbol ? Symbol.for('react.suspense') : 0xead1;
+var REACT_PURE_TYPE = hasSymbol ? Symbol.for('react.pure') : 0xead3;
+
+var Resolved = 1;
+
+
+
+
+function refineResolvedThenable(thenable) {
+  return thenable._reactStatus === Resolved ? thenable._reactResult : null;
+}
+
+function getWrappedName(outerType, innerType, wrapperName) {
+  var functionName = innerType.displayName || innerType.name || '';
+  return outerType.displayName || (functionName !== '' ? wrapperName + '(' + functionName + ')' : wrapperName);
+}
 
 function getComponentName(type) {
   if (type == null) {
@@ -141,8 +204,8 @@ function getComponentName(type) {
     return type;
   }
   switch (type) {
-    case REACT_ASYNC_MODE_TYPE:
-      return 'AsyncMode';
+    case REACT_CONCURRENT_MODE_TYPE:
+      return 'ConcurrentMode';
     case REACT_FRAGMENT_TYPE:
       return 'Fragment';
     case REACT_PORTAL_TYPE:
@@ -151,8 +214,8 @@ function getComponentName(type) {
       return 'Profiler';
     case REACT_STRICT_MODE_TYPE:
       return 'StrictMode';
-    case REACT_PLACEHOLDER_TYPE:
-      return 'Placeholder';
+    case REACT_SUSPENSE_TYPE:
+      return 'Suspense';
   }
   if (typeof type === 'object') {
     switch (type.$$typeof) {
@@ -161,9 +224,16 @@ function getComponentName(type) {
       case REACT_PROVIDER_TYPE:
         return 'Context.Provider';
       case REACT_FORWARD_REF_TYPE:
-        var renderFn = type.render;
-        var functionName = renderFn.displayName || renderFn.name || '';
-        return functionName !== '' ? 'ForwardRef(' + functionName + ')' : 'ForwardRef';
+        return getWrappedName(type, type.render, 'ForwardRef');
+      case REACT_PURE_TYPE:
+        return getWrappedName(type, type.render, 'Pure');
+    }
+    if (typeof type.then === 'function') {
+      var thenable = type;
+      var resolvedThenable = refineResolvedThenable(thenable);
+      if (resolvedThenable) {
+        return getComponentName(resolvedThenable);
+      }
     }
   }
   return null;
@@ -252,17 +322,33 @@ var warning = warningWithoutStack$1;
 
 var warning$1 = warning;
 
+var BEFORE_SLASH_RE = /^(.*)[\\\/]/;
+
 var describeComponentFrame = function (name, source, ownerName) {
-  return '\n    in ' + (name || 'Unknown') + (source ? ' (at ' + source.fileName.replace(/^.*[\\\/]/, '') + ':' + source.lineNumber + ')' : ownerName ? ' (created by ' + ownerName + ')' : '');
+  var sourceInfo = '';
+  if (source) {
+    var path = source.fileName;
+    var fileName = path.replace(BEFORE_SLASH_RE, '');
+    {
+      // In DEV, include code for a common special case:
+      // prefer "folder/index.js" instead of just "index.js".
+      if (/^index\./.test(fileName)) {
+        var match = path.match(BEFORE_SLASH_RE);
+        if (match) {
+          var pathBeforeSlash = match[1];
+          if (pathBeforeSlash) {
+            var folderName = pathBeforeSlash.replace(BEFORE_SLASH_RE, '');
+            fileName = folderName + '/' + fileName;
+          }
+        }
+      }
+    }
+    sourceInfo = ' (at ' + fileName + ':' + source.lineNumber + ')';
+  } else if (ownerName) {
+    sourceInfo = ' (created by ' + ownerName + ')';
+  }
+  return '\n    in ' + (name || 'Unknown') + sourceInfo;
 };
-
-// Exports ReactDOM.createRoot
-
-
-// Experimental error-boundary API that can recover from errors within a single
-// render phase
-
-// Suspense
 
 // Helps identify side effects in begin-phase lifecycle hooks and setState reducers:
 
@@ -280,13 +366,20 @@ var describeComponentFrame = function (name, source, ownerName) {
 // Warn about deprecated, async-unsafe lifecycles; relates to RFC #6:
 var warnAboutDeprecatedLifecycles = false;
 
-// Warn about legacy context API
-
-
 // Gather advanced timing metrics for Profiler subtrees.
 
 
+// Trace which interactions trigger each commit.
+
+
 // Only used in www builds.
+var enableSuspenseServerRenderer = true;
+
+// Only used in www builds.
+
+
+// React Fire: prevent the value and checked attributes from syncing
+// with their related DOM properties
 
 // A reserved attribute.
 // It is handled by React separately and shouldn't be written to the DOM.
@@ -473,7 +566,7 @@ var properties = {};
 // In React, we let users pass `true` and `false` even though technically
 // these aren't boolean attributes (they are coerced to strings).
 // Since these are SVG attributes, their attribute names are case-sensitive.
-['autoReverse', 'externalResourcesRequired', 'preserveAlpha'].forEach(function (name) {
+['autoReverse', 'externalResourcesRequired', 'focusable', 'preserveAlpha'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, BOOLEANISH_STRING, false, // mustUseProperty
   name, // attributeName
   null);
@@ -500,7 +593,7 @@ var properties = {};
 // disabled with `removeAttribute`. We have special logic for handling this.
 'multiple', 'muted', 'selected'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, BOOLEAN, true, // mustUseProperty
-  name.toLowerCase(), // attributeName
+  name, // attributeName
   null);
 } // attributeNamespace
 );
@@ -509,7 +602,7 @@ var properties = {};
 // booleans, but can also accept a string value.
 ['capture', 'download'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, OVERLOADED_BOOLEAN, false, // mustUseProperty
-  name.toLowerCase(), // attributeName
+  name, // attributeName
   null);
 } // attributeNamespace
 );
@@ -517,7 +610,7 @@ var properties = {};
 // These are HTML attributes that must be positive numbers.
 ['cols', 'rows', 'size', 'span'].forEach(function (name) {
   properties[name] = new PropertyInfoRecord(name, POSITIVE_NUMERIC, false, // mustUseProperty
-  name.toLowerCase(), // attributeName
+  name, // attributeName
   null);
 } // attributeNamespace
 );
@@ -874,6 +967,7 @@ var isUnitlessNumber = {
   flexShrink: true,
   flexNegative: true,
   flexOrder: true,
+  gridArea: true,
   gridRow: true,
   gridRowEnd: true,
   gridRowSpan: true,
@@ -1911,6 +2005,13 @@ var validateProperty$1 = function () {};
       return false;
     }
 
+    // Warn when passing the strings 'false' or 'true' into a boolean prop
+    if ((value === 'false' || value === 'true') && propertyInfo !== null && propertyInfo.type === BOOLEAN) {
+      warning$1(false, 'Received the string `%s` for the boolean attribute `%s`. ' + '%s ' + 'Did you mean %s={%s}?', value, name, value === 'false' ? 'The browser will interpret it as a truthy value.' : 'Although this works, it will not work as expected if you pass the string "false".', name, value);
+      warnedProperties$1[name] = true;
+      return true;
+    }
+
     return true;
   };
 }
@@ -2165,14 +2266,11 @@ function flattenOptionChildren(children) {
     if (child == null) {
       return;
     }
-    if (typeof child === 'string' || typeof child === 'number') {
-      content += child;
-    } else {
-      {
-        if (!didWarnInvalidOptionChildren) {
-          didWarnInvalidOptionChildren = true;
-          warningWithoutStack$1(false, 'Only strings and numbers are supported as <option> children.');
-        }
+    content += child;
+    {
+      if (!didWarnInvalidOptionChildren && typeof child !== 'string' && typeof child !== 'number') {
+        didWarnInvalidOptionChildren = true;
+        warning$1(false, 'Only strings and numbers are supported as <option> children.');
       }
     }
   });
@@ -2639,7 +2737,7 @@ var ReactDOMServerRenderer = function () {
 
       switch (elementType) {
         case REACT_STRICT_MODE_TYPE:
-        case REACT_ASYNC_MODE_TYPE:
+        case REACT_CONCURRENT_MODE_TYPE:
         case REACT_PROFILER_TYPE:
         case REACT_FRAGMENT_TYPE:
           {
@@ -2658,16 +2756,12 @@ var ReactDOMServerRenderer = function () {
             this.stack.push(_frame);
             return '';
           }
-        // eslint-disable-next-line-no-fallthrough
-        default:
-          break;
-      }
-      if (typeof elementType === 'object' && elementType !== null) {
-        switch (elementType.$$typeof) {
-          case REACT_FORWARD_REF_TYPE:
-            {
-              var element = nextChild;
-              var _nextChildren2 = toArray(elementType.render(element.props, element.ref));
+        case REACT_SUSPENSE_TYPE:
+          {
+            if (enableSuspenseServerRenderer) {
+              var _nextChildren2 = toArray(
+              // Always use the fallback when synchronously rendering to string.
+              nextChild.props.fallback);
               var _frame2 = {
                 type: null,
                 domNamespace: parentNamespace,
@@ -2681,14 +2775,22 @@ var ReactDOMServerRenderer = function () {
               }
               this.stack.push(_frame2);
               return '';
+            } else {
+              invariant(false, 'ReactDOMServer does not yet support Suspense.');
             }
-          case REACT_PROVIDER_TYPE:
+          }
+        // eslint-disable-next-line-no-fallthrough
+        default:
+          break;
+      }
+      if (typeof elementType === 'object' && elementType !== null) {
+        switch (elementType.$$typeof) {
+          case REACT_FORWARD_REF_TYPE:
             {
-              var provider = nextChild;
-              var nextProps = provider.props;
-              var _nextChildren3 = toArray(nextProps.children);
+              var element = nextChild;
+              var _nextChildren3 = toArray(elementType.render(element.props, element.ref));
               var _frame3 = {
-                type: provider,
+                type: null,
                 domNamespace: parentNamespace,
                 children: _nextChildren3,
                 childIndex: 0,
@@ -2698,21 +2800,16 @@ var ReactDOMServerRenderer = function () {
               {
                 _frame3.debugElementStack = [];
               }
-
-              this.pushProvider(provider);
-
               this.stack.push(_frame3);
               return '';
             }
-          case REACT_CONTEXT_TYPE:
+          case REACT_PROVIDER_TYPE:
             {
-              var consumer = nextChild;
-              var _nextProps = consumer.props;
-              var nextValue = consumer.type._currentValue;
-
-              var _nextChildren4 = toArray(_nextProps.children(nextValue));
+              var provider = nextChild;
+              var nextProps = provider.props;
+              var _nextChildren4 = toArray(nextProps.children);
               var _frame4 = {
-                type: nextChild,
+                type: provider,
                 domNamespace: parentNamespace,
                 children: _nextChildren4,
                 childIndex: 0,
@@ -2722,10 +2819,37 @@ var ReactDOMServerRenderer = function () {
               {
                 _frame4.debugElementStack = [];
               }
+
+              this.pushProvider(provider);
+
               this.stack.push(_frame4);
               return '';
             }
+          case REACT_CONTEXT_TYPE:
+            {
+              var consumer = nextChild;
+              var _nextProps = consumer.props;
+              var nextValue = consumer.type._currentValue;
+
+              var _nextChildren5 = toArray(_nextProps.children(nextValue));
+              var _frame5 = {
+                type: nextChild,
+                domNamespace: parentNamespace,
+                children: _nextChildren5,
+                childIndex: 0,
+                context: context,
+                footer: ''
+              };
+              {
+                _frame5.debugElementStack = [];
+              }
+              this.stack.push(_frame5);
+              return '';
+            }
           default:
+            if (typeof elementType.then === 'function') {
+              invariant(false, 'ReactDOMServer does not yet support lazy-loaded components.');
+            }
             break;
         }
       }
@@ -2983,7 +3107,7 @@ var ReactDOMServer = ( ReactDOMServerBrowser$1 && ReactDOMServerBrowser ) || Rea
 
 // TODO: decide on the top-level export form.
 // This is hacky but makes it work with both Rollup and Jest
-var server_browser = ReactDOMServer.default ? ReactDOMServer.default : ReactDOMServer;
+var server_browser = ReactDOMServer.default || ReactDOMServer;
 
 module.exports = server_browser;
   })();

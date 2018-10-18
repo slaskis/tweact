@@ -1,6 +1,6 @@
 {
   "name": "react-dom",
-  "version": "16.4.1",
+  "version": "16.6.0-alpha.8af6728",
   "description": "React package for working with the DOM.",
   "main": "index.js",
   "repository": "facebook/react",
@@ -15,15 +15,17 @@
   "dependencies": {
     "loose-envify": "^1.1.0",
     "object-assign": "^4.1.1",
-    "prop-types": "^15.6.2"
+    "prop-types": "^15.6.2",
+    "scheduler": "^0.10.0-alpha.8af6728"
   },
   "peerDependencies": {
-    "react": "^16.0.0"
+    "react": "^16.0.0 || 16.6.0-alpha.8af6728"
   },
   "files": [
     "LICENSE",
     "README.md",
     "index.js",
+    "profiling.js",
     "server.js",
     "server.browser.js",
     "server.node.js",

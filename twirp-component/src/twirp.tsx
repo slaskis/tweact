@@ -1,5 +1,5 @@
 import React from "react";
-import { createResource, Cache } from "simple-cache-provider";
+import { createResource, Cache } from "react-cache";
 
 export { TwirpJSONClient } from "./twirp.json";
 
@@ -66,7 +66,7 @@ export abstract class TwirpService<Req, Res> extends React.Component<
       console.log("got response", res);
       return res;
     },
-    req => {
+    (req: any) => {
       const key = toKey(this.method, req.variables);
       console.log("hash for request", key);
       return key;

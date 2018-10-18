@@ -1,5 +1,5 @@
 import React from "react";
-import { createCache } from "simple-cache-provider";
+import { createCache } from "react-cache";
 import "isomorphic-fetch";
 
 import {

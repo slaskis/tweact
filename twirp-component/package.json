@@ -6,18 +6,19 @@
   "source": "src/twirp.tsx",
   "license": "MIT",
   "scripts": {
-    "build": "microbundle --target browser --external fetch,react,simple-cache-provider",
+    "build": "microbundle --target browser --external fetch,react,react-cache",
     "dev": "microbundle watch"
   },
   "peerDependencies": {
-    "react": "^16.4.0",
-    "simple-cache-provider": "*"
+    "react": "*",
+    "react-cache": "*"
   },
   "devDependencies": {
     "@types/react": "^16.4.6",
     "microbundle": "^0.6.0",
     "react": "./vendor/react",
-    "simple-cache-provider": "./vendor/simple-cache-provider",
+    "react-dom": "./vendor/react-dom",
+    "react-cache": "./vendor/react-cache",
     "typescript": "^2.9.2"
   }
 }
