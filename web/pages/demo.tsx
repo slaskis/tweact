@@ -6,17 +6,15 @@ import Nav from "../components/Nav";
 import withTwirp from "../components/withTwirp";
 import { Echo } from "../rpc/demo/DemoService";
 
-const Demo = () => {
-  return typeof window == "undefined" ? null : (
-    <div>
-      <Head title="Home" />
-      <Nav />
-      <Suspense fallback={<span>Loading...</span>}>
-        <Echoes />
-      </Suspense>
-    </div>
-  );
-};
+const Demo = () => (
+  <div>
+    <Head title="Home" />
+    <Nav />
+    <Suspense fallback={<span>Loading...</span>}>
+      <Echoes />
+    </Suspense>
+  </div>
+);
 
 function Echoes() {
   let update = useTwirp(Echo);

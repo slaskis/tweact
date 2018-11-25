@@ -10,25 +10,22 @@ import {
   Todo
 } from "../rpc/todos/v1/TodoService";
 
-const App = () =>
-  typeof window == "undefined" ? null : (
-    <div>
-      <Head title="Home" />
-      <Nav />
-      <Suspense delayMs={1000} fallback={<span>Loading...</span>}>
-        <Todos />
-      </Suspense>
-    </div>
-  );
+const App = () => (
+  <div>
+    <Head title="Home" />
+    <Nav />
+    <Suspense fallback={<span>Loading...</span>}>
+      <Todos />
+    </Suspense>
+  </div>
+);
 
-function TodoItem({ todo, onRemove }: { todo: Todo; onRemove: Function }) {
-  return (
-    <li>
-      {todo.title}
-      <a onClick={() => onRemove()}>&times;</a>
-    </li>
-  );
-}
+const TodoItem = ({ todo, onRemove }: { todo: Todo; onRemove: Function }) => (
+  <li>
+    {todo.title}
+    <a onClick={() => onRemove()}>&times;</a>
+  </li>
+);
 
 function Todos({}) {
   let { todos } = useTwirp(ListTodos, {}); // immediate request
