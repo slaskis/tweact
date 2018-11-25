@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@department/twirp-component": "../twirp-component",
-    "next": "7.0.2",
+    "next": "canary",
     "react": "next",
     "react-dom": "next"
   },
