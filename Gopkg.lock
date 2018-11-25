@@ -2,36 +2,50 @@
 
 
 [[projects]]
+  digest = "1:913e6a7d6b5bb120b5f8b626f63025fa6966426b676dd54b4d77597b1758d0b4"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
     "proto",
     "protoc-gen-go/descriptor",
     "protoc-gen-go/plugin",
-    "ptypes/struct"
+    "ptypes/struct",
   ]
+  pruneopts = "UT"
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:9695b472826ca23e521d650849fefac3102dddbf841c9a4b35fb9d3ed5d17011"
   name = "github.com/rs/cors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:e846eb60aab81e27464b50b882378b6b8b8fb1a7fdfd4e30e39c8c1c00057adf"
   name = "github.com/twitchtv/twirp"
   packages = [
     ".",
     "ctxsetters",
-    "internal/contextkeys"
+    "internal/contextkeys",
   ]
+  pruneopts = "UT"
   revision = "1b8455b42110feb46a56aeec1ea0020067f46b11"
   version = "v5.4.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e8db5e899beb782a93525141d13495555f4d38e4badd537159c0459d5febfe2f"
+  input-imports = [
+    "github.com/golang/protobuf/jsonpb",
+    "github.com/golang/protobuf/proto",
+    "github.com/golang/protobuf/protoc-gen-go/descriptor",
+    "github.com/golang/protobuf/protoc-gen-go/plugin",
+    "github.com/rs/cors",
+    "github.com/twitchtv/twirp",
+    "github.com/twitchtv/twirp/ctxsetters",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

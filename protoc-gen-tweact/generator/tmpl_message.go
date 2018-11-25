@@ -17,8 +17,8 @@ type message struct {
 var messageTemplate = template.Must(template.New("message").Parse(`
 {{- .Comment }}
 export interface {{.Name}} {
-	{{- range .Fields}}
-	{{.Comment}}
+  {{- range .Fields}}
+  {{- .Comment}}
   {{.Name}}: {{.Type}};
   {{- end}}
 }`))

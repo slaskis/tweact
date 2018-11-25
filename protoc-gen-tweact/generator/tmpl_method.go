@@ -13,10 +13,4 @@ type method struct {
 
 var methodTemplate = template.Must(template.New("method").Parse(`
 {{- .Comment}}
-export const {{.Name}} = withTwirp(
-  class {{.Name}} extends TwirpService<{{.InputType}}, {{.OutputType}}> {
-    constructor(props: any) {
-      super("{{.Package}}.{{.Service}}/{{.Name}}", props);
-    }
-  }
-);`))
+export const {{.Name}} = (r: {{.InputType}}, t: TwirpClient<{{.InputType}}, {{.OutputType}}>) => t.request("{{.Package}}.{{.Service}}/{{.Name}}", r, {});`))

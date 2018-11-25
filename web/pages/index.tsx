@@ -1,7 +1,8 @@
-import React, { Placeholder } from "react";
+import React, { Suspense } from "react";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
 import withTwirp from "../components/withTwirp";
+import { useTwirp } from "@department/twirp-component";
 import {
   ListTodos,
   CreateTodo,
@@ -9,58 +10,54 @@ import {
   Todo
 } from "../rpc/todos/v1/TodoService";
 
-const App = () => (
-  <div>
-    <Head title="Home" />
-    <Nav />
-    <Placeholder delayMs={1000} fallback={<span>Loading...</span>}>
-      <ListTodos>
-        {({ todos }) =>
-          todos && todos.length ? (
-            <ul>{todos.map(t => <TodoRow key={t.id} {...t} />)}</ul>
-          ) : (
-            <span>No todos available</span>
-          )
-        }
-      </ListTodos>
+const App = () =>
+  typeof window == "undefined" ? null : (
+    <div>
+      <Head title="Home" />
+      <Nav />
+      <Suspense delayMs={1000} fallback={<span>Loading...</span>}>
+        <Todos />
+      </Suspense>
+    </div>
+  );
 
-      <CreateTodo wait>
-        {({ todo }, update) => (
-          <form
-            onSubmit={evt => {
-              evt.preventDefault();
-              const title = evt.currentTarget.elements[0] as HTMLInputElement;
-              if (title) {
-                update({
-                  title: title.value
-                });
-              }
-            }}
-          >
-            <input name="title" placeholder="Title of Todo" defaultValue="" />
-            <button>Create</button>
-            {todo ? "Created a todo with id " + todo.id : null}
-          </form>
-        )}
-      </CreateTodo>
-    </Placeholder>
-  </div>
-);
+function TodoItem({ todo, onRemove }: { todo: Todo; onRemove: Function }) {
+  return (
+    <li>
+      {todo.title}
+      <a onClick={() => onRemove()}>&times;</a>
+    </li>
+  );
+}
 
-const TodoRow = ({ id, title }: Todo) => (
-  <RemoveTodo wait>
-    {({}, update) => (
-      <li key={id}>
-        <span>{title}</span>
-        <button onClick={() => update({ id })}>Remove</button>
-        <style jsx>{`
-          li {
-            display: flex;
-          }
-        `}</style>
-      </li>
-    )}
-  </RemoveTodo>
-);
+function Todos({}) {
+  let { todos } = useTwirp(ListTodos, {}); // immediate request
+  let createTodo = useTwirp(CreateTodo); // curried request
+  let removeTodo = useTwirp(RemoveTodo);
+
+  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const el = ev.currentTarget.elements.namedItem("name");
+    if (el instanceof HTMLInputElement) {
+      createTodo({ title: el.value });
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <ul>
+        {todos.map(t => (
+          <TodoItem
+            key={t.id}
+            todo={t}
+            onRemove={() => removeTodo({ id: t.id })}
+          />
+        ))}
+      </ul>
+      <input name="name" />
+      <button>Create</button>
+    </form>
+  );
+}
 
 export default withTwirp(App);

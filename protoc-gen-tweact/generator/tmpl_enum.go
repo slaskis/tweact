@@ -18,7 +18,7 @@ var enumTemplate = template.Must(template.New("enum").Parse(`
 {{- .Comment}}
 export enum {{.Name}} {
   {{- range .Value}}
-  {{.Comment}}
+  {{- .Comment}}
   {{.Name}} = {{.Number}},
   {{- end}}
 }`))

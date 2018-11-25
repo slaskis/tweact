@@ -8,24 +8,24 @@
  * an Echo method.
  */
 
-import { TwirpService } from "@department/twirp-component";
+import { TwirpClient } from "@department/twirp-component";
 
 /**
  * EchoRequest only passes a message
  */
 export interface EchoRequest {
-  /**
-   * message to echo
-   */
+/**
+ * message to echo
+ */
   message: string;
 }
 /**
  * EchoResponse only contains a message
  */
 export interface EchoResponse {
-  /**
-   * message that was in the request
-   */
+/**
+ * message that was in the request
+ */
   message: string;
 }
 /**
@@ -33,16 +33,14 @@ export interface EchoResponse {
  */
 export enum Test {
   UNKNOWN = 0,
-
-  /**
-   * So does this value
-   */
+/**
+ * So does this value
+ */
   HELLO = 1,
-
-  /**
-   * and trailing
-   */
-  THERE = 2
+/**
+ * and trailing
+ */
+  THERE = 2,
 }
 
 /**
@@ -50,6 +48,4 @@ export enum Test {
  * request. Useful for testing and as a minimal
  * example.
  */
-export class Echo extends TwirpService<EchoRequest, EchoResponse> {
-  method = "demo.DemoService/Echo";
-}
+export const Echo = (r: EchoRequest, t: TwirpClient<EchoRequest, EchoResponse>) => t.request("demo.DemoService/Echo", r, {});
