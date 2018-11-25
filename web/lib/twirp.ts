@@ -49,7 +49,7 @@ export function useTwirp<Req, Res>(
         listeners.removeListener(key, onChange);
       };
     },
-    [version, key]
+    [version, req]
   );
 
   if (typeof res != "undefined") {

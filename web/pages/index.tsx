@@ -23,9 +23,20 @@ const App = () => (
 const TodoItem = ({ todo, onRemove }: { todo: Todo; onRemove: Function }) => (
   <li>
     {todo.title}
-    <a href="javascript:void" onClick={() => onRemove()}>
+    <button type="button" onClick={() => onRemove()}>
       &times;
-    </a>
+    </button>
+    <style jsx>{`
+      button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        color: red;
+      }
+      button:hover {
+        color: darkred;
+      }
+    `}</style>
   </li>
 );
 
