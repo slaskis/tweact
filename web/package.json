@@ -7,10 +7,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "@department/twirp-component": "../twirp-component",
     "next": "canary",
     "react": "next",
-    "react-dom": "next",
-    "@department/twirp-component": "../twirp-component"
+    "react-dom": "next"
   },
   "devDependencies": {
     "@babel/core": "7.1.6",

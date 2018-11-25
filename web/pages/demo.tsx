@@ -1,5 +1,5 @@
 import React, { Suspense, useState } from "react";
-import { useTwirp } from "@department/tweact-component";
+import { useTwirp } from "@department/twirp-component";
 
 import Head from "../components/Head";
 import Nav from "../components/Nav";
