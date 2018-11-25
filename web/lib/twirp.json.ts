@@ -12,6 +12,7 @@ export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
     variables: Req,
     options: { headers?: object } = {}
   ): Promise<Res> {
+    console.log("json client request", this.prefix + method, variables);
     return fetch(this.prefix + method, {
       method: "POST",
       headers: {
@@ -35,18 +36,18 @@ type TwirpErrorMeta = {
   [k: string]: string;
 };
 type TwirpErrorObject = {
-  code: string;
   msg: string;
+  code: string;
   meta: TwirpErrorMeta;
 };
 
 class TwirpError extends Error {
-  status: Number;
   code: string;
   meta: TwirpErrorMeta;
+  status: number;
   message: string;
 
-  constructor(status: Number, error: TwirpErrorObject) {
+  constructor(status: number, error: TwirpErrorObject) {
     super(error.msg);
     this.status = status;
     this.code = error.code;

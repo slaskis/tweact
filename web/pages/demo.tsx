@@ -18,7 +18,7 @@ const Demo = () => (
 
 function Echoes() {
   let update = useTwirp(Echo);
-  let [message, setMessage] = useState<string>("");
+  let [message, setMessage] = useState("");
 
   function onSubmit(evt: React.FormEvent<HTMLFormElement>) {
     evt.preventDefault();

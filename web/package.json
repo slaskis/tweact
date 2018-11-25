@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "next": "canary",
+    "pbf": "^3.1.0",
     "react": "next",
     "react-dom": "next"
   },

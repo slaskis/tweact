@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
 import withTwirp from "../components/withTwirp";
-import { useTwirp } from "../lib/twirp";
+import { useTwirp, invalidate } from "../lib/twirp";
 import {
   ListTodos,
   CreateTodo,
@@ -23,20 +23,23 @@ const App = () => (
 const TodoItem = ({ todo, onRemove }: { todo: Todo; onRemove: Function }) => (
   <li>
     {todo.title}
-    <a onClick={() => onRemove()}>&times;</a>
+    <a href="javascript:void" onClick={() => onRemove()}>
+      &times;
+    </a>
   </li>
 );
 
 function Todos({}) {
-  let { todos } = useTwirp(ListTodos, {}); // immediate request
+  let { todos = [] } = useTwirp(ListTodos, {}); // immediate request
   let createTodo = useTwirp(CreateTodo); // curried request
   let removeTodo = useTwirp(RemoveTodo);
 
-  function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     const el = ev.currentTarget.elements.namedItem("name");
     if (el instanceof HTMLInputElement) {
-      createTodo({ title: el.value });
+      await createTodo({ title: el.value });
+      invalidate(ListTodos, {});
     }
   }
 
@@ -47,11 +50,14 @@ function Todos({}) {
           <TodoItem
             key={t.id}
             todo={t}
-            onRemove={() => removeTodo({ id: t.id })}
+            onRemove={async () => {
+              await removeTodo({ id: t.id });
+              invalidate(ListTodos, {});
+            }}
           />
         ))}
       </ul>
-      <input name="name" />
+      <input name="name" autoFocus />
       <button>Create</button>
     </form>
   );
