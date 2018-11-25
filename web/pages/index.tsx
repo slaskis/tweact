@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
 import withTwirp from "../components/withTwirp";
-import { useTwirp } from "@department/twirp-component";
+import { useTwirp } from "../lib/twirp";
 import {
   ListTodos,
   CreateTodo,

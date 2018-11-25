@@ -1,10 +1,8 @@
 import React from "react";
 import "isomorphic-fetch";
 
-import {
-  TwirpJSONClient as TwirpClient,
-  TwirpContext
-} from "@department/twirp-component";
+import { TwirpContext } from "../lib/twirp";
+import { TwirpJSONClient as TwirpClient } from "../lib/twirp.json";
 
 const prefix = "http://localhost:4000/twirp/";
 

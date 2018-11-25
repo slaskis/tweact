@@ -7,7 +7,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@department/twirp-component": "../twirp-component",
     "next": "canary",
     "react": "next",
     "react-dom": "next"
