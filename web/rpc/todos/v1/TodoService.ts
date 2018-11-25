@@ -6,24 +6,24 @@ interface TwirpClient<Req, Res> {
 }
 
 export interface Todo {
-  id: string;
-  title: string;
-  state: TodoState;
+  id?: string;
+  title?: string;
+  state?: TodoState;
 }
 export interface TodoResponse {
-  todo: Todo;
+  todo?: Todo;
 }
 export interface ListTodoResponse {
-  todos: Todo[];
+  todos?: Todo[];
 }
 export interface CreateTodoRequest {
-  title: string;
+  title?: string;
 }
 export interface RemoveTodoRequest {
-  id: string;
+  id?: string;
 }
 export interface GetTodoRequest {
-  id: string;
+  id?: string;
 }
 export interface ListTodosRequest {
 }

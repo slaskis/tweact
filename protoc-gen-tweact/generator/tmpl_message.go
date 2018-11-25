@@ -19,6 +19,6 @@ var messageTemplate = template.Must(template.New("message").Parse(`
 export interface {{.Name}} {
   {{- range .Fields}}
   {{- .Comment}}
-  {{.Name}}: {{.Type}};
+  {{.Name}}?: {{.Type}};
   {{- end}}
 }`))

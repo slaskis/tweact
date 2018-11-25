@@ -19,7 +19,7 @@ export interface EchoRequest {
 /**
  * message to echo
  */
-  message: string;
+  message?: string;
 }
 /**
  * EchoResponse only contains a message
@@ -28,7 +28,7 @@ export interface EchoResponse {
 /**
  * message that was in the request
  */
-  message: string;
+  message?: string;
 }
 /**
  * TestEnum has a comment
