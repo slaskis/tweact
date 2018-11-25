@@ -2,6 +2,6 @@ bin/api
 node_modules/
 dist/
 .rpt2_cache
-.rpt2_cache_es
-.rpt2_cache_cjs
-.rpt2_cache_umd
+.rts2_cache_es
+.rts2_cache_cjs
+.rts2_cache_umd
