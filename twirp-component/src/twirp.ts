@@ -1,4 +1,5 @@
-import React, { useContext, useState } from "react";
+import React from "react";
+const { useCallback, useContext, useState } = React;
 
 export { TwirpJSONClient } from "./twirp.json";
 
@@ -37,19 +38,22 @@ export function useTwirp<Req, Res>(
     );
   }
 
-  if (typeof req == "undefined") {
-    return (req: Req) =>
-      method(req, client).then((res: Res) => {
+  const request = useCallback(
+    (req: Req) => {
+      return method(req, client).then((res: Res) => {
         setRes(res);
         return res;
       });
+    },
+    [req]
+  );
+
+  if (typeof req == "undefined") {
+    return request;
   }
 
   if (typeof res == "undefined") {
-    throw method(req, client).then((res: Res) => {
-      setRes(res);
-      return res;
-    });
+    throw request(req);
   }
 
   return res;
