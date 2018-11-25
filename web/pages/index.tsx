@@ -40,6 +40,7 @@ function Todos({}) {
     if (el instanceof HTMLInputElement) {
       await createTodo({ title: el.value });
       invalidate(ListTodos, {});
+      el.focus();
     }
   }
 

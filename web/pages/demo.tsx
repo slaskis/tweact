@@ -26,7 +26,10 @@ function Echoes() {
     if (message instanceof HTMLInputElement) {
       update({
         message: message.value
-      }).then(res => setMessage(res.message));
+      }).then(res => {
+        setMessage(res.message);
+        message.focus();
+      });
     }
   }
 

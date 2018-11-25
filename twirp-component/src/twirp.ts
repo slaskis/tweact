@@ -1,5 +1,5 @@
 import React from "react";
-const { useCallback, useContext, useState } = React;
+const { useCallback, useContext, useState } = React; // to not break .mjs
 
 export { TwirpJSONClient } from "./twirp.json";
 
@@ -45,7 +45,7 @@ export function useTwirp<Req, Res>(
         return res;
       });
     },
-    [req]
+    [method, client, req]
   );
 
   if (typeof req == "undefined") {
