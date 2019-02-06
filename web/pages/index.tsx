@@ -1,75 +1,83 @@
-import React, { Suspense } from "react";
+import React, { useState } from "react";
 import { Head } from "../components/Head";
 import { Nav } from "../components/Nav";
 import withTwirp from "../components/withTwirp";
 import { useTwirp, invalidate } from "../lib/twirp";
 import { ListTodos, CreateTodo, RemoveTodo } from "../rpc/todos/v1/TodoService";
+import { Todo } from "rpc/todos/v1/Todo";
 
 function App() {
   return (
     <div>
       <Head title="Home" />
       <Nav />
-      <Suspense fallback={<span>Loading...</span>}>
-        <Todos />
-      </Suspense>
+      <Todos />
     </div>
   );
 }
 
-function TodoItem({ todo, onRemove }: { todo: any; onRemove: Function }) {
+function TodoItem({ todo, onRemove }: { todo: Todo; onRemove: Function }) {
   return (
     <li>
       {todo.title}
-      <button type="button" onClick={() => onRemove()}>
+      <button type="button" onClick={() => onRemove(todo.id!)}>
         &times;
       </button>
-      <style jsx>{`
-        button {
-          appearance: none;
-          border: 0;
-          cursor: pointer;
-          color: red;
-        }
-        button:hover {
-          color: darkred;
-        }
-      `}</style>
     </li>
   );
 }
 
-function Todos({}) {
-  let { todos = [] } = useTwirp(ListTodos, {}); // immediate request
+function Todos() {
+  let [{ todos = [] }, error, loading] = useTwirp(ListTodos, {}); // immediate request
   let createTodo = useTwirp(CreateTodo); // curried request
   let removeTodo = useTwirp(RemoveTodo);
+
+  // render any errors caught for create or remove
+  let [updateError, setError] = useState<Error | undefined>(undefined);
 
   async function onSubmit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     const el = ev.currentTarget.elements.namedItem("name");
     if (el instanceof HTMLInputElement) {
-      await createTodo({ title: el.value });
+      try {
+        setError(undefined);
+        await createTodo({ title: el.value });
+        invalidate(ListTodos, {});
+        el.focus();
+      } catch (err) {
+        setError(err);
+      }
+    }
+  }
+
+  async function onRemove(id: string) {
+    try {
+      setError(undefined);
+      await removeTodo({ id });
       invalidate(ListTodos, {});
-      el.focus();
+    } catch (err) {
+      setError(err);
     }
   }
 
   return (
     <form onSubmit={onSubmit}>
-      <ul>
-        {todos.map(t => (
-          <TodoItem
-            key={t.id}
-            todo={t}
-            onRemove={async () => {
-              await removeTodo({ id: t.id });
-              invalidate(ListTodos, {});
-            }}
-          />
-        ))}
-      </ul>
+      {error ? (
+        <p className="text-red text-xs italic">{error.message}</p>
+      ) : loading ? (
+        <p>Loading...</p>
+      ) : (
+        <ul>
+          {todos.map(t => (
+            <TodoItem key={t.id} todo={t} onRemove={onRemove} />
+          ))}
+        </ul>
+      )}
       <input name="name" autoFocus />
       <button>Create</button>
+      {updateError ? (
+        <p className="text-red text-xs italic">{updateError.message}</p>
+      ) : null}
     </form>
   );
 }

@@ -26,12 +26,6 @@
 import { {{ . | base | trimSuffix ".proto" }} } from "./{{ . | base | trimSuffix ".proto" }}"
 {{end}}
 
-{{- if .File.Service}}
-interface TwirpClient<Req, Res> {
-  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
-}
-{{- end }}
-
 {{- range .File.EnumType}}
 {{- template "comments" .}}
 export enum {{.Name}} {
@@ -84,6 +78,11 @@ export interface {{.Name}} {
 {{- end}}
 
 
+{{- if .File.Service}}
+interface TwirpClient<Req, Res> {
+  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
+}
+{{- end }}
 {{- range .File.Service}}
 {{- template "comments" .}}
 {{- $serviceName:=.Name}}

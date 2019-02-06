@@ -7,7 +7,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "next": "canary",
+    "next": "^8.0.0-canary.18",
     "pbf": "^3.1.0",
     "react": "16.8.0",
     "react-dom": "16.8.0"

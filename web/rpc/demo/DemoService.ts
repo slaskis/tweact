@@ -3,9 +3,6 @@
 //
 // source: demo/DemoService.proto
 //
-interface TwirpClient<Req, Res> {
-  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
-}
 // TestEnum has a comment
 export enum Test {
   UNKNOWN = 0,
@@ -23,6 +20,9 @@ export interface EchoRequest {
 export interface EchoResponse {
 // message that was in the request
   message?: string;
+}
+interface TwirpClient<Req, Res> {
+  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
 }
 // DemoService shows a very simple service with only  an Echo method.
 // Echo responds with the message passed into the  request. Useful for

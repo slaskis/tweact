@@ -8,16 +8,16 @@ const withTwirp = (
   Component: React.ComponentClass | React.SFC,
   prefix = "http://localhost:4000/twirp/"
 ) =>
-  class extends React.Component {
+  class WithTwirp extends React.Component {
+    static displayName = `WithTwirp(${Component.displayName ||
+      Component.name ||
+      "<unnamed>"})`;
+
     twirp = {
       client: new TwirpClient(prefix)
     };
 
     render() {
-      // skip ssr completely for now
-      if (typeof window == "undefined") {
-        return null;
-      }
       return (
         <TwirpContext.Provider value={this.twirp}>
           <Component {...this.props} />

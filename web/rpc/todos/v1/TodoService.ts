@@ -5,9 +5,6 @@
 //
 import { Todo } from "./Todo"
 
-interface TwirpClient<Req, Res> {
-  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
-}
 export interface TodoResponse {
   todo?: Todo;
 }
@@ -24,6 +21,9 @@ export interface GetTodoRequest {
   id?: string;
 }
 export interface ListTodosRequest {
+}
+interface TwirpClient<Req, Res> {
+  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
 }
 export const CreateTodo = (r: CreateTodoRequest, t: TwirpClient<CreateTodoRequest, TodoResponse>, o = {}) => t.request("todos.v1.TodoService/CreateTodo", r, o);
 export const RemoveTodo = (r: RemoveTodoRequest, t: TwirpClient<RemoveTodoRequest, TodoResponse>, o = {}) => t.request("todos.v1.TodoService/RemoveTodo", r, o);

@@ -1,4 +1,4 @@
-import { TwirpClient } from "./twirp";
+import { TwirpClient, TwirpError } from "./twirp";
 
 export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
   prefix: string;
@@ -28,27 +28,5 @@ export class TwirpJSONClient<Req, Res> implements TwirpClient<Req, Res> {
         }
         return body as Res;
       });
-  }
-}
-
-type TwirpErrorMeta = {
-  [k: string]: string;
-};
-type TwirpErrorObject = {
-  msg: string;
-  code: string;
-  meta: TwirpErrorMeta;
-};
-
-export class TwirpError extends Error {
-  code: string;
-  meta: TwirpErrorMeta;
-  status: number;
-
-  constructor(status: number, error: TwirpErrorObject) {
-    super(error.msg);
-    this.status = status;
-    this.code = error.code;
-    this.meta = error.meta;
   }
 }
