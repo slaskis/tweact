@@ -1,8 +1,8 @@
 import React, { Suspense, useState } from "react";
 import { useTwirp } from "../lib/twirp";
 
-import Head from "../components/Head";
-import Nav from "../components/Nav";
+import { Head } from "../components/Head";
+import { Nav } from "../components/Nav";
 import withTwirp from "../components/withTwirp";
 import { Echo } from "../rpc/demo/DemoService";
 

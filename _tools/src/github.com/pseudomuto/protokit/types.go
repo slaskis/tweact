@@ -1,6 +1,7 @@
 package protokit
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	"fmt"
@@ -12,6 +13,8 @@ type common struct {
 	path     string
 	LongName string
 	FullName string
+
+	OptionExtensions map[string]interface{}
 }
 
 func newCommon(f *FileDescriptor, path, longName string) common {
@@ -43,6 +46,35 @@ func (c *common) GetFullName() string { return c.FullName }
 // IsProto3 returns whether or not this is a proto3 object
 func (c *common) IsProto3() bool { return c.file.GetSyntax() == "proto3" }
 
+func getOptions(options proto.Message) (m map[string]interface{}) {
+	for _, extension := range proto.RegisteredExtensions(options) {
+		if !proto.HasExtension(options, extension) {
+			continue
+		}
+		ext, err := proto.GetExtension(options, extension)
+		if err != nil {
+			continue
+		}
+		if m == nil {
+			m = make(map[string]interface{})
+		}
+		m[extension.Name] = ext
+	}
+	return m
+}
+
+func (c *common) setOptions(options proto.Message) {
+	if opts := getOptions(options); len(opts) > 0 {
+		if c.OptionExtensions == nil {
+			c.OptionExtensions = opts
+			return
+		}
+		for k, v := range opts {
+			c.OptionExtensions[k] = v
+		}
+	}
+}
+
 // An ImportedDescriptor describes a type that was imported by a FileDescriptor.
 type ImportedDescriptor struct {
 	common
@@ -62,6 +94,8 @@ type FileDescriptor struct {
 	Imports    []*ImportedDescriptor
 	Messages   []*Descriptor
 	Services   []*ServiceDescriptor
+
+	OptionExtensions map[string]interface{}
 }
 
 // IsProto3 returns whether or not this file is a proto3 file
@@ -124,6 +158,18 @@ func (f *FileDescriptor) GetService(name string) *ServiceDescriptor {
 	}
 
 	return nil
+}
+
+func (f *FileDescriptor) setOptions(options proto.Message) {
+	if opts := getOptions(options); len(opts) > 0 {
+		if f.OptionExtensions == nil {
+			f.OptionExtensions = opts
+			return
+		}
+		for k, v := range opts {
+			f.OptionExtensions[k] = v
+		}
+	}
 }
 
 // An EnumDescriptor describe an enum type

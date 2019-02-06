@@ -2,13 +2,11 @@
 
 
 [[projects]]
-  digest = "1:913e6a7d6b5bb120b5f8b626f63025fa6966426b676dd54b4d77597b1758d0b4"
+  digest = "1:7e84d43e13c40dd0e5982be013881b5ced48550237cfb35e12e0579d31f6276a"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
     "proto",
-    "protoc-gen-go/descriptor",
-    "protoc-gen-go/plugin",
     "ptypes/struct",
   ]
   pruneopts = "UT"
@@ -41,8 +39,6 @@
   input-imports = [
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
-    "github.com/golang/protobuf/protoc-gen-go/descriptor",
-    "github.com/golang/protobuf/protoc-gen-go/plugin",
     "github.com/rs/cors",
     "github.com/twitchtv/twirp",
     "github.com/twitchtv/twirp/ctxsetters",

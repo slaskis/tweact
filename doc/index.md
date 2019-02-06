@@ -3,7 +3,7 @@
 
 ## Table of Contents
 
-- [demo/service.proto](#demo/service.proto)
+- [demo/DemoService.proto](#demo/DemoService.proto)
     - [EchoRequest](#demo.EchoRequest)
     - [EchoResponse](#demo.EchoResponse)
   
@@ -38,10 +38,10 @@
 
 
 
-<a name="demo/service.proto"/>
+<a name="demo/DemoService.proto"/>
 <p align="right"><a href="#top">Top</a></p>
 
-## demo/service.proto
+## demo/DemoService.proto
 
 
 

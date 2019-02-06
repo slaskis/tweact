@@ -1,44 +1,43 @@
 import React, { Suspense } from "react";
-import Head from "../components/Head";
-import Nav from "../components/Nav";
+import { Head } from "../components/Head";
+import { Nav } from "../components/Nav";
 import withTwirp from "../components/withTwirp";
 import { useTwirp, invalidate } from "../lib/twirp";
-import {
-  ListTodos,
-  CreateTodo,
-  RemoveTodo,
-  Todo
-} from "../rpc/todos/v1/TodoService";
+import { ListTodos, CreateTodo, RemoveTodo } from "../rpc/todos/v1/TodoService";
 
-const App = () => (
-  <div>
-    <Head title="Home" />
-    <Nav />
-    <Suspense fallback={<span>Loading...</span>}>
-      <Todos />
-    </Suspense>
-  </div>
-);
+function App() {
+  return (
+    <div>
+      <Head title="Home" />
+      <Nav />
+      <Suspense fallback={<span>Loading...</span>}>
+        <Todos />
+      </Suspense>
+    </div>
+  );
+}
 
-const TodoItem = ({ todo, onRemove }: { todo: Todo; onRemove: Function }) => (
-  <li>
-    {todo.title}
-    <button type="button" onClick={() => onRemove()}>
-      &times;
-    </button>
-    <style jsx>{`
-      button {
-        appearance: none;
-        border: 0;
-        cursor: pointer;
-        color: red;
-      }
-      button:hover {
-        color: darkred;
-      }
-    `}</style>
-  </li>
-);
+function TodoItem({ todo, onRemove }: { todo: any; onRemove: Function }) {
+  return (
+    <li>
+      {todo.title}
+      <button type="button" onClick={() => onRemove()}>
+        &times;
+      </button>
+      <style jsx>{`
+        button {
+          appearance: none;
+          border: 0;
+          cursor: pointer;
+          color: red;
+        }
+        button:hover {
+          color: darkred;
+        }
+      `}</style>
+    </li>
+  );
+}
 
 function Todos({}) {
   let { todos = [] } = useTwirp(ListTodos, {}); // immediate request

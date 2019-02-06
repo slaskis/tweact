@@ -1,0 +1,94 @@
+//
+// GENERATED CODE -- DO NOT EDIT!
+//
+// source: {{.File.Name}}
+//
+
+{{- $Package:=.File.Package}}
+
+{{- define "comments"}}
+{{- range leadingComment . | splitArray "\n" | join " " | wrap 72 | splitArray "\n"}}
+// {{ . | trim }}
+{{- end}}
+{{- range leadingDetachedComments .}}
+{{- range . | splitArray "\n" | join " " |wrap 72 | splitArray "\n"}}
+// {{ . | trim }}
+{{- end}}
+{{- end}}
+{{- range trailingComment . | splitArray "\n" | join " " |wrap 72 | splitArray "\n"}}
+// {{ . | trim }}
+{{- end}}
+{{- end}}
+
+
+{{- range .File.Dependency}}
+{{- template "comments" .}}
+import { {{ . | base | trimSuffix ".proto" }} } from "./{{ . | base | trimSuffix ".proto" }}"
+{{end}}
+
+{{- if .File.Service}}
+interface TwirpClient<Req, Res> {
+  request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
+}
+{{- end }}
+
+{{- range .File.EnumType}}
+{{- template "comments" .}}
+export enum {{.Name}} {
+  {{- range .Value}}
+  {{- template "comments" .}}
+  {{.Name}} = {{.Number}},
+  {{- end}}
+}
+{{- end}}
+
+
+{{- range .File.MessageType}}
+{{- $MessageType := .Name}}
+
+{{- range .EnumType }}
+{{- template "comments" .}}
+export enum {{$MessageType}}_{{.Name}} {
+  {{- range .Value}}
+  {{- template "comments" .}}
+  {{.Name}} = {{.Number}},
+  {{- end}}
+}
+{{- end}}
+
+{{- range .NestedType }}
+{{- template "comments" .}}
+export interface {{$MessageType}}_{{.Name}} {
+  {{- range .Field}}
+  {{- template "comments" .}}
+  {{- if isFieldRepeated .}}
+  {{.Name}}?: Array<{{. | jsType | trimPrefix "Array<" | trimSuffix ">" | replace "$" "/" | base }}>;
+  {{- else}}
+  {{.Name}}?: {{. | jsType | trimPrefix "Array<" | trimSuffix ">" | replace "$" "/" | base }};
+  {{- end}}
+  {{- end}}
+}
+{{- end}}
+
+{{- template "comments" .}}
+export interface {{.Name}} {
+  {{- range .Field}}
+  {{- template "comments" .}}
+  {{- if isFieldRepeated .}}
+  {{.Name}}?: Array<{{. | jsType | trimPrefix "Array<" | trimSuffix ">" | replace "$" "/" | base }}>;
+  {{- else}}
+  {{.Name}}?: {{. | jsType | trimPrefix "Array<" | trimSuffix ">" | replace "$" "/" | base }};
+  {{- end}}
+  {{- end}}
+}
+{{- end}}
+
+
+{{- range .File.Service}}
+{{- template "comments" .}}
+{{- $serviceName:=.Name}}
+{{- range .Method}}
+{{- template "comments" .}}
+export const {{.Name}} = (r: {{.InputType | shortType}}, t: TwirpClient<{{.InputType | shortType}}, {{.OutputType | shortType}}>, o = {}) => t.request("{{$Package}}.{{$serviceName}}/{{.Name}}", r, o);
+{{- end}}
+{{- end}}

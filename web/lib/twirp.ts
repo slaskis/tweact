@@ -28,9 +28,11 @@ export function useTwirp<Req, Res>(
   method: TwirpMethod<Req, Res>,
   req: Req
 ): Res;
+
 export function useTwirp<Req, Res>(
   method: TwirpMethod<Req, Res>
 ): Request<Req, Res>;
+
 export function useTwirp<Req, Res>(
   method: TwirpMethod<Req, Res>,
   req?: Req
@@ -41,16 +43,13 @@ export function useTwirp<Req, Res>(
   const key = method.name + JSON.stringify(req);
   const res = responses.get(key);
 
-  useEffect(
-    () => {
-      const onChange = () => update(version + 1);
-      listeners.addListener(key, onChange);
-      return () => {
-        listeners.removeListener(key, onChange);
-      };
-    },
-    [version, req]
-  );
+  useEffect(() => {
+    const onChange = () => update(version + 1);
+    listeners.addListener(key, onChange);
+    return () => {
+      listeners.removeListener(key, onChange);
+    };
+  }, [version, req]);
 
   if (typeof res != "undefined") {
     console.log("res cached", res, key);

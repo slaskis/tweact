@@ -4,9 +4,10 @@ import "isomorphic-fetch";
 import { TwirpContext } from "../lib/twirp";
 import { TwirpJSONClient as TwirpClient } from "../lib/twirp.json";
 
-const prefix = "http://localhost:4000/twirp/";
-
-const withTwirp = (Component: React.ComponentClass | React.SFC) =>
+const withTwirp = (
+  Component: React.ComponentClass | React.SFC,
+  prefix = "http://localhost:4000/twirp/"
+) =>
   class extends React.Component {
     twirp = {
       client: new TwirpClient(prefix)

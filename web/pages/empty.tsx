@@ -1,6 +1,6 @@
 import React from "react";
-import Nav from "../components/Nav";
-import Head from "../components/Head";
+import { Head } from "../components/Head";
+import { Nav } from "../components/Nav";
 
 const App = () => (
   <div>
