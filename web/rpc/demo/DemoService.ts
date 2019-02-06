@@ -3,10 +3,6 @@
 /**
  * File comments can be useful too
  */
-/**
- * DemoService shows a very simple service with only
- * an Echo method.
- */
 
 interface TwirpClient<Req, Res> {
   request(method: string, variables: Partial<Req>, options: any): Promise<Res>;
@@ -44,6 +40,10 @@ export enum Test {
  */
   THERE = 2,
 }
+/**
+ * DemoService shows a very simple service with only
+ * an Echo method.
+ */
 
 /**
  * Echo responds with the message passed into the

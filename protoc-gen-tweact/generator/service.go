@@ -2,6 +2,8 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -11,7 +13,7 @@ import (
 
 func CreateClientAPI(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGeneratorResponse_File, error) {
 	var files []*plugin.CodeGeneratorResponse_File
-	pkg := d.GetPackage()
+	pkg := packageToPath(d.GetPackage())
 
 	// useful for debugging comments...
 	// fmt.Fprintf(os.Stderr, "source location comments for %s:\n", d.GetName())
@@ -23,61 +25,80 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGenerator
 	// 	fmt.Fprintf(os.Stderr, "- %s: %s\n", path, location(loc))
 	// }
 
-	// services are separate files and contains methods
-	for _, svc := range d.Service {
-		buf := bytes.NewBuffer(nil)
+	buf := bytes.NewBuffer(nil)
 
-		// inject the header with runtime requirements
-		// and file/service comments
-		err := headerTemplate.Execute(buf, header{
-			Source:  d.GetName(),
-			Comment: writeComments(FileComments(d)) + writeComments(ServiceComments(d, svc)),
+	var imports []dependency
+	for _, p := range d.GetDependency() {
+		// pkg: todos/v1
+		// p: todos/v1/Todo.proto
+		paths := strings.Split(filepath.Base(p), ".")
+		name := strings.Join(paths[0:len(paths)-1], ".")
+		path, _ := filepath.Rel(pkg, p)
+		fmt.Fprintln(os.Stderr, "dependency of ", pkg, p, path)
+		imports = append(imports, dependency{
+			Name: name,
+			Path: "./" + path,
+		})
+	}
+
+	err := headerTemplate.Execute(buf, header{
+		Imports: imports,
+		Source:  d.GetName(),
+		Comment: writeComments(FileComments(d)),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// messages can be shared between services
+	// (and are also only interfaces)
+	// TODO move into shared file?
+	for _, msg := range d.MessageType {
+		var fields []field
+		for _, f := range msg.Field {
+			fmt.Fprintln(os.Stderr, "type name of ", f.GetJsonName(), f.GetTypeName())
+			fields = append(fields, field{
+				Name:    f.GetJsonName(),
+				Type:    toTSType(f),
+				Comment: writeComments(FieldComments(d, msg, f)),
+			})
+		}
+		err := messageTemplate.Execute(buf, message{
+			Name:    msg.GetName(),
+			Fields:  fields,
+			Comment: writeComments(MessageComments(d, msg)),
 		})
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		// messages can be shared between services
-		// (and are also only interfaces)
-		// TODO move into shared file?
-		for _, msg := range d.MessageType {
-			var fields []field
-			for _, f := range msg.Field {
-				fields = append(fields, field{
-					Name:    f.GetJsonName(),
-					Type:    toTSType(f),
-					Comment: writeComments(FieldComments(d, msg, f)),
-				})
-			}
-			err := messageTemplate.Execute(buf, message{
-				Name:    *msg.Name,
-				Fields:  fields,
-				Comment: writeComments(MessageComments(d, msg)),
+	for _, e := range d.EnumType {
+		var value []enumValue
+		for _, v := range e.Value {
+			value = append(value, enumValue{
+				Name:    v.GetName(),
+				Number:  v.GetNumber(),
+				Comment: writeComments(EnumValueComments(d, e, v)),
 			})
-			if err != nil {
-				return nil, err
-			}
 		}
-
-		for _, e := range d.EnumType {
-			var value []enumValue
-			for _, v := range e.Value {
-				value = append(value, enumValue{
-					Name:    v.GetName(),
-					Number:  v.GetNumber(),
-					Comment: writeComments(EnumValueComments(d, e, v)),
-				})
-			}
-			err := enumTemplate.Execute(buf, enum{
-				Name:    e.GetName(),
-				Value:   value,
-				Comment: writeComments(EnumComments(d, e)),
-			})
-			if err != nil {
-				return nil, err
-			}
+		err := enumTemplate.Execute(buf, enum{
+			Name:    e.GetName(),
+			Value:   value,
+			Comment: writeComments(EnumComments(d, e)),
+		})
+		if err != nil {
+			return nil, err
 		}
+	}
 
+	// services are separate files and contains methods
+	for _, svc := range d.Service {
+		buf := bytes.NewBuffer(buf.Bytes())
+
+		// inject the header with runtime requirements
+		// and file/service comments
+		buf.WriteString(writeComments(ServiceComments(d, svc)))
 		buf.WriteString("\n")
 
 		for _, met := range svc.GetMethod() {
@@ -95,7 +116,18 @@ func CreateClientAPI(d *descriptor.FileDescriptorProto) ([]*plugin.CodeGenerator
 		}
 		content := buf.String()
 
-		name := filepath.Join(packageToPath(d.GetPackage()), svc.GetName()) + ".ts"
+		name := filepath.Join(pkg, svc.GetName()) + ".ts"
+		file := plugin.CodeGeneratorResponse_File{
+			Name:    &name,
+			Content: &content,
+		}
+		files = append(files, &file)
+	}
+
+	if len(files) == 0 && buf.Len() != 0 {
+		content := buf.String()
+		name := filepath.Join(pkg, filepath.Base(d.GetName())) + ".ts"
+		fmt.Fprintln(os.Stderr, "writing file", name, d.GetName())
 		file := plugin.CodeGeneratorResponse_File{
 			Name:    &name,
 			Content: &content,

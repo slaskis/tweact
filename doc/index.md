@@ -13,19 +13,25 @@
     - [DemoService](#demo.DemoService)
   
 
-- [todos/v1/service.proto](#todos/v1/service.proto)
+- [todos/v1/TodoService.proto](#todos/v1/TodoService.proto)
     - [CreateTodoRequest](#todos.v1.CreateTodoRequest)
     - [GetTodoRequest](#todos.v1.GetTodoRequest)
     - [ListTodoResponse](#todos.v1.ListTodoResponse)
     - [ListTodosRequest](#todos.v1.ListTodosRequest)
     - [RemoveTodoRequest](#todos.v1.RemoveTodoRequest)
-    - [Todo](#todos.v1.Todo)
     - [TodoResponse](#todos.v1.TodoResponse)
+  
+  
+  
+    - [TodoService](#todos.v1.TodoService)
+  
+
+- [todos/v1/Todo.proto](#todos/v1/Todo.proto)
+    - [Todo](#todos.v1.Todo)
   
     - [TodoState](#todos.v1.TodoState)
   
   
-    - [TodoService](#todos.v1.TodoService)
   
 
 - [Scalar Value Types](#scalar-value-types)
@@ -102,10 +108,10 @@ an Echo method.
 
 
 
-<a name="todos/v1/service.proto"/>
+<a name="todos/v1/TodoService.proto"/>
 <p align="right"><a href="#top">Top</a></p>
 
-## todos/v1/service.proto
+## todos/v1/TodoService.proto
 
 
 
@@ -179,6 +185,50 @@ an Echo method.
 
 
 
+<a name="todos.v1.TodoResponse"/>
+
+### TodoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| todo | [Todo](#todos.v1.Todo) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="todos.v1.TodoService"/>
+
+### TodoService
+
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| CreateTodo | [CreateTodoRequest](#todos.v1.CreateTodoRequest) | [TodoResponse](#todos.v1.CreateTodoRequest) |  |
+| RemoveTodo | [RemoveTodoRequest](#todos.v1.RemoveTodoRequest) | [TodoResponse](#todos.v1.RemoveTodoRequest) |  |
+| GetTodo | [GetTodoRequest](#todos.v1.GetTodoRequest) | [TodoResponse](#todos.v1.GetTodoRequest) |  |
+| ListTodos | [ListTodosRequest](#todos.v1.ListTodosRequest) | [ListTodoResponse](#todos.v1.ListTodosRequest) |  |
+
+ 
+
+
+
+<a name="todos/v1/Todo.proto"/>
+<p align="right"><a href="#top">Top</a></p>
+
+## todos/v1/Todo.proto
+
+
+
 <a name="todos.v1.Todo"/>
 
 ### Todo
@@ -190,21 +240,6 @@ an Echo method.
 | id | [string](#string) |  |  |
 | title | [string](#string) |  |  |
 | state | [TodoState](#todos.v1.TodoState) |  |  |
-
-
-
-
-
-
-<a name="todos.v1.TodoResponse"/>
-
-### TodoResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| todo | [Todo](#todos.v1.Todo) |  |  |
 
 
 
@@ -228,19 +263,6 @@ an Echo method.
  
 
  
-
-
-<a name="todos.v1.TodoService"/>
-
-### TodoService
-
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| CreateTodo | [CreateTodoRequest](#todos.v1.CreateTodoRequest) | [TodoResponse](#todos.v1.CreateTodoRequest) |  |
-| RemoveTodo | [RemoveTodoRequest](#todos.v1.RemoveTodoRequest) | [TodoResponse](#todos.v1.RemoveTodoRequest) |  |
-| GetTodo | [GetTodoRequest](#todos.v1.GetTodoRequest) | [TodoResponse](#todos.v1.GetTodoRequest) |  |
-| ListTodos | [ListTodosRequest](#todos.v1.ListTodosRequest) | [ListTodoResponse](#todos.v1.ListTodosRequest) |  |
 
  
 

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package todos.v1;
+
+option go_package = "todos";
+
+enum TodoState {
+  UNKNOWN = 0;
+  ARCHIVED = 1;
+  ACTIVE = 2;
+}
+
+message Todo {
+  string id = 1;
+  string title = 2;
+  TodoState state = 3;
+}
