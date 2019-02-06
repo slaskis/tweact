@@ -4,12 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/slaskis/tweact/pkg/demo"
-
 	"github.com/rs/cors"
-	"github.com/slaskis/tweact/pkg/demo/demoserver"
-	"github.com/slaskis/tweact/pkg/todos/v1"
-	"github.com/slaskis/tweact/pkg/todos/v1/todoserver"
+	"github.com/slaskis/tweact/api/demo"
+	"github.com/slaskis/tweact/api/demo/demoserver"
+	"github.com/slaskis/tweact/api/todos/v1"
+	"github.com/slaskis/tweact/api/todos/v1/todoserver"
 )
 
 func main() {

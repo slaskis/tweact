@@ -1,6 +1,6 @@
 package demoserver
 
-import "github.com/slaskis/tweact/pkg/demo"
+import "github.com/slaskis/tweact/api/demo"
 
 var _ demo.DemoService = &DemoServer{}
 

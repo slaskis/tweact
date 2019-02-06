@@ -1,7 +1,7 @@
 package todoserver
 
 import (
-	"github.com/slaskis/tweact/pkg/todos/v1"
+	"github.com/slaskis/tweact/api/todos/v1"
 )
 
 var _ todos.TodoService = &TodoServer{}

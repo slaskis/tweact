@@ -5,7 +5,7 @@ import (
 
 	"github.com/twitchtv/twirp"
 
-	"github.com/slaskis/tweact/pkg/demo"
+	"github.com/slaskis/tweact/api/demo"
 )
 
 func (s *DemoServer) Echo(ctx context.Context, in *demo.EchoRequest) (*demo.EchoResponse, error) {

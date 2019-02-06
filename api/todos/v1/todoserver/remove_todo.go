@@ -5,7 +5,7 @@ import (
 
 	"github.com/twitchtv/twirp"
 
-	todos "github.com/slaskis/tweact/pkg/todos/v1"
+	todos "github.com/slaskis/tweact/api/todos/v1"
 )
 
 func (s *TodoServer) RemoveTodo(ctx context.Context, in *todos.RemoveTodoRequest) (*todos.TodoResponse, error) {
