@@ -44,6 +44,7 @@ function Todos() {
         await createTodo({ title: el.value });
         invalidate(ListTodos, {});
         el.focus();
+        el.select();
       } catch (err) {
         setError(err);
       }
@@ -66,12 +67,14 @@ function Todos() {
         <p className="text-red text-xs italic">{error.message}</p>
       ) : loading ? (
         <p>Loading...</p>
-      ) : (
+      ) : todos.length ? (
         <ul>
           {todos.map(t => (
             <TodoItem key={t.id} todo={t} onRemove={onRemove} />
           ))}
         </ul>
+      ) : (
+        <p>No todos yet. Create one!</p>
       )}
       <input name="name" autoFocus />
       <button>Create</button>

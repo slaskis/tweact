@@ -3,15 +3,15 @@ import Link from "next/link";
 
 export function Nav() {
   return (
-    <nav>
-      <Link prefetch href="/">
-        <a>Home</a>
+    <nav className="list-reset flex">
+      <Link href="/">
+        <a className="mr-6 text-blue hover:text-blue-darker">Todos</a>
       </Link>
-      <Link prefetch href="/empty">
-        <a>Empty</a>
+      <Link href="/empty">
+        <a className="mr-6 text-blue hover:text-blue-darker">Empty</a>
       </Link>
-      <Link prefetch href="/demo">
-        <a>Demo</a>
+      <Link href="/demo">
+        <a className="mr-6 text-blue hover:text-blue-darker">Demo</a>
       </Link>
     </nav>
   );

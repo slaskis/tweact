@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from "react";
+import React, { useState } from "react";
 import { useTwirp, TwirpError } from "../lib/twirp";
 
 import { Head } from "../components/Head";
