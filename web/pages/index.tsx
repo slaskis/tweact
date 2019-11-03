@@ -1,17 +1,16 @@
 import React from "react";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
-import "isomorphic-unfetch"
-
 import { TodoService } from "../rpc/todos/v1/service.proto";
 import { Todo } from "../rpc/todos/v1/types.proto";
-import { useRequest } from "../hooks/useRequest";
+import { useRequest, invalidate } from "../hooks/useRequest";
 
 // can be initiated in a context if we want it shared across components
 const { ListTodos, CreateTodo, RemoveTodo } = new TodoService(
   "http://localhost:4000/twirp/",
   {
-    fetcher: typeof window != "undefined" ? window.fetch.bind(window) : undefined
+    fetcher:
+      typeof window != "undefined" ? window.fetch.bind(window) : undefined
   }
 );
 
@@ -48,9 +47,8 @@ const App = () => {
           evt.preventDefault();
           const title = evt.currentTarget.elements[0] as HTMLInputElement;
           if (title) {
-            create({
-              title: title.value
-            });
+            create({ title: title.value });
+            invalidate(ListTodos);
           }
         }}
       >
@@ -69,14 +67,20 @@ const TodoRow = ({ id, title }: Todo) => {
   return (
     <li key={id}>
       <span>{title}</span>
-      <button disabled={loading} onClick={() => remove({ id })}>
+      <button
+        disabled={loading}
+        onClick={() => {
+          remove({ id });
+          invalidate(ListTodos);
+        }}
+      >
         {loading ? "Removing..." : "Remove"}
       </button>
       <style jsx>{`
-          li {
-            display: flex;
-          }
-        `}</style>
+        li {
+          display: flex;
+        }
+      `}</style>
     </li>
   );
 };

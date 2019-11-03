@@ -1,6 +1,46 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 
-export function useRequest<Req, Res>(request: (req: Req) => Promise<Res>, variables?: Req) {
+type Request<Req, Res> = (req: Req) => Promise<Res>
+
+const handlers: Set<{handler: () => void, matcher: any}> = new Set()
+const pending: Set<{handler: () => void, matcher: any}> = new Set()
+
+export function invalidate<Req, Res>(request: Request<Req, Res>) {
+    for (let handler of handlers) {
+        if (handler.matcher === request) {
+            pending.add(handler)
+        }
+    }
+}
+
+function revalidate() {
+    for (let handler of pending) {
+        handler.handler()
+    }
+    pending.clear()
+}
+
+function useInvalidate(matcher: any) {
+    const [attempt, setAttempt] = useState(0)
+
+    useEffect(() => {
+        const handler = {
+            handler() { 
+                setAttempt(attempt + 1)
+            }, 
+            matcher
+        }
+        handlers.add(handler)
+        return () => {
+            handlers.delete(handler)
+        }
+    }, [attempt])
+    
+    return attempt
+}
+
+export function useRequest<Req, Res>(request: Request<Req, Res>, variables?: Req) {
+    const attempt = useInvalidate(request)
     const [vars, setVariables] = useState(variables)
     const [data, setData] = useState<Partial<Res>>({})
     const [loading, setLoading] = useState<boolean>(vars !== undefined)
@@ -17,17 +57,19 @@ export function useRequest<Req, Res>(request: (req: Req) => Promise<Res>, variab
         }
         setLoading(false)
         setData(res)
+        revalidate()
       }, err => {
         if (cancelled) {
           return
         }
         setLoading(false)
         setError(err)
+        revalidate()
       })
       return () => {
         cancelled = true
       }
-    }, [vars])
+    }, [vars, attempt])
   
     function update(req: Req) {
       setLoading(true)
