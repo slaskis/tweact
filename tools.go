@@ -1,5 +1,6 @@
 // +build tools
-package tools
+
+package tweact
 
 import (
 	_ "github.com/ckaznocha/protoc-gen-lint"
