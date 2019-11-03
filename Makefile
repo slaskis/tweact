@@ -1,6 +1,6 @@
 .SUFFIXES:
 
-SOURCE = $(shell find pkg cmd protoc-gen-tweact -name '*.go')
+SOURCE = $(shell find pkg cmd -name '*.go')
 RPC = $(shell find rpc -name '*.proto')
 GO_TOOLS = $(shell grep _ tools.go | cut -d\" -f 2)
 GO_TOOLS_DIR = _tools/bin/
@@ -28,8 +28,8 @@ test:
 .PHONY: test
 
 generate: doc vendor tools
-	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/todos/v1/service.proto
-	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/demo/service.proto
+	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --gotemplate_out=single-package-mode=true,all=true:web/rpc rpc/todos/v1/*.proto
+	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --gotemplate_out=single-package-mode=true,all=true:web/rpc rpc/demo/*.proto
 .PHONY: generate
 
 tools: $(GO_TOOLS_DIR) $(GO_TOOLS_BIN)

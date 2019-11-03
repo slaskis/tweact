@@ -5,10 +5,10 @@ const Nav = () => (
   <nav>
     <ul>
       <li>
-        <Link prefetch href="/">
+        <Link href="/">
           <a>Home</a>
         </Link>
-        <Link prefetch href="/empty">
+        <Link href="/empty">
           <a>Empty</a>
         </Link>
       </li>

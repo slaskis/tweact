@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "jsx": "react",
+    "jsx": "preserve",
     "allowJs": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -14,8 +14,25 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "lib": ["dom", "es2015", "es2016"],
-    "strict": true
+    "lib": [
+      "dom",
+      "es2015",
+      "es2016"
+    ],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
   },
-  "exclude": ["node_modules", "static"]
+  "exclude": [
+    "node_modules",
+    "static"
+  ],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

@@ -21,4 +21,5 @@ require (
 	github.com/twitchtv/twirp v5.4.1+incompatible
 	golang.org/x/crypto v0.0.0-20191029031824-8986dd9e96cf // indirect
 	google.golang.org/genproto v0.0.0-20191028173616-919d9bdd9fe6 // indirect
+	moul.io/protoc-gen-gotemplate v1.7.0
 )

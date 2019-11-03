@@ -1,15 +1,19 @@
 import React from "react";
 import Head from "../components/Head";
 import Nav from "../components/Nav";
-import withTwirp from "../components/withTwirp";
-import { Echo } from "../rpc/demo/DemoService";
+import { DemoService } from "../rpc/demo/service.proto";
+import { useRequest } from "../hooks/useRequest";
 
-const Demo = () => (
+// can be initiated in a context if we want it shared across components
+const {Echo} = new DemoService("http://localhost:4000/twirp/")
+
+const Demo = () => {
+  const {data: {message}, loading, error, update} = useRequest(Echo, {message: "hello"});
+  
+  return (
   <div>
     <Head title="Home" />
     <Nav />
-    <Echo wait>
-      {({ data: { message }, error, loading, update }) => (
         <form
           onSubmit={evt => {
             evt.preventDefault();
@@ -25,15 +29,14 @@ const Demo = () => (
             "Loading..."
           ) : error ? (
             <span>Error: {error.message}</span>
-          ) : message ? (
+          ) : (
             <h1>{message}</h1>
-          ) : null}
+          )}
           <input name="message" placeholder="Echo message" defaultValue="" />
           <button disabled={loading}>Send</button>
         </form>
-      )}
-    </Echo>
   </div>
-);
+)
+};
 
-export default withTwirp(Demo);
+export default Demo;

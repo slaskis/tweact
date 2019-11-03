@@ -4,23 +4,13 @@ package todos.v1;
 
 option go_package = "todos";
 
+import "todos/v1/types.proto";
+
 service TodoService {
   rpc CreateTodo (CreateTodoRequest) returns (TodoResponse);
   rpc RemoveTodo (RemoveTodoRequest) returns (TodoResponse);
   rpc GetTodo (GetTodoRequest) returns (TodoResponse);
   rpc ListTodos (ListTodosRequest) returns (ListTodoResponse);
-}
-
-enum TodoState {
-  UNKNOWN = 0;
-  ARCHIVED = 1;
-  ACTIVE = 2;
-}
-
-message Todo {
-  string id = 1;
-  string title = 2;
-  TodoState state = 3;
 }
 
 message TodoResponse {

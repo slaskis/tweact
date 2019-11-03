@@ -1,5 +1,5 @@
 # Protocol Documentation
-<a name="top"/>
+<a name="top"></a>
 
 ## Table of Contents
 
@@ -13,16 +13,22 @@
     - [DemoService](#demo.DemoService)
   
 
+- [todos/v1/types.proto](#todos/v1/types.proto)
+    - [Todo](#todos.v1.Todo)
+  
+    - [TodoState](#todos.v1.TodoState)
+  
+  
+  
+
 - [todos/v1/service.proto](#todos/v1/service.proto)
     - [CreateTodoRequest](#todos.v1.CreateTodoRequest)
     - [GetTodoRequest](#todos.v1.GetTodoRequest)
     - [ListTodoResponse](#todos.v1.ListTodoResponse)
     - [ListTodosRequest](#todos.v1.ListTodosRequest)
     - [RemoveTodoRequest](#todos.v1.RemoveTodoRequest)
-    - [Todo](#todos.v1.Todo)
     - [TodoResponse](#todos.v1.TodoResponse)
   
-    - [TodoState](#todos.v1.TodoState)
   
   
     - [TodoService](#todos.v1.TodoService)
@@ -32,14 +38,14 @@
 
 
 
-<a name="demo/service.proto"/>
+<a name="demo/service.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## demo/service.proto
 
 
 
-<a name="demo.EchoRequest"/>
+<a name="demo.EchoRequest"></a>
 
 ### EchoRequest
 EchoRequest only passes a message
@@ -54,7 +60,7 @@ EchoRequest only passes a message
 
 
 
-<a name="demo.EchoResponse"/>
+<a name="demo.EchoResponse"></a>
 
 ### EchoResponse
 EchoResponse only contains a message
@@ -71,7 +77,7 @@ EchoResponse only contains a message
  
 
 
-<a name="demo.Test"/>
+<a name="demo.Test"></a>
 
 ### Test
 TestEnum has a comment
@@ -88,7 +94,7 @@ TestEnum has a comment
  
 
 
-<a name="demo.DemoService"/>
+<a name="demo.DemoService"></a>
 
 ### DemoService
 DemoService shows a very simple service with only
@@ -96,90 +102,20 @@ an Echo method.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| Echo | [EchoRequest](#demo.EchoRequest) | [EchoResponse](#demo.EchoRequest) | Echo responds with the message passed into the request. Useful for testing and as a minimal example. |
+| Echo | [EchoRequest](#demo.EchoRequest) | [EchoResponse](#demo.EchoResponse) | Echo responds with the message passed into the request. Useful for testing and as a minimal example. |
 
  
 
 
 
-<a name="todos/v1/service.proto"/>
+<a name="todos/v1/types.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## todos/v1/service.proto
+## todos/v1/types.proto
 
 
 
-<a name="todos.v1.CreateTodoRequest"/>
-
-### CreateTodoRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| title | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="todos.v1.GetTodoRequest"/>
-
-### GetTodoRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="todos.v1.ListTodoResponse"/>
-
-### ListTodoResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| todos | [Todo](#todos.v1.Todo) | repeated |  |
-
-
-
-
-
-
-<a name="todos.v1.ListTodosRequest"/>
-
-### ListTodosRequest
-
-
-
-
-
-
-
-<a name="todos.v1.RemoveTodoRequest"/>
-
-### RemoveTodoRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="todos.v1.Todo"/>
+<a name="todos.v1.Todo"></a>
 
 ### Todo
 
@@ -195,25 +131,10 @@ an Echo method.
 
 
 
-
-<a name="todos.v1.TodoResponse"/>
-
-### TodoResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| todo | [Todo](#todos.v1.Todo) |  |  |
-
-
-
-
-
  
 
 
-<a name="todos.v1.TodoState"/>
+<a name="todos.v1.TodoState"></a>
 
 ### TodoState
 
@@ -229,18 +150,119 @@ an Echo method.
 
  
 
+ 
 
-<a name="todos.v1.TodoService"/>
+
+
+<a name="todos/v1/service.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## todos/v1/service.proto
+
+
+
+<a name="todos.v1.CreateTodoRequest"></a>
+
+### CreateTodoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| title | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="todos.v1.GetTodoRequest"></a>
+
+### GetTodoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="todos.v1.ListTodoResponse"></a>
+
+### ListTodoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| todos | [Todo](#todos.v1.Todo) | repeated |  |
+
+
+
+
+
+
+<a name="todos.v1.ListTodosRequest"></a>
+
+### ListTodosRequest
+
+
+
+
+
+
+
+<a name="todos.v1.RemoveTodoRequest"></a>
+
+### RemoveTodoRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="todos.v1.TodoResponse"></a>
+
+### TodoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| todo | [Todo](#todos.v1.Todo) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="todos.v1.TodoService"></a>
 
 ### TodoService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreateTodo | [CreateTodoRequest](#todos.v1.CreateTodoRequest) | [TodoResponse](#todos.v1.CreateTodoRequest) |  |
-| RemoveTodo | [RemoveTodoRequest](#todos.v1.RemoveTodoRequest) | [TodoResponse](#todos.v1.RemoveTodoRequest) |  |
-| GetTodo | [GetTodoRequest](#todos.v1.GetTodoRequest) | [TodoResponse](#todos.v1.GetTodoRequest) |  |
-| ListTodos | [ListTodosRequest](#todos.v1.ListTodosRequest) | [ListTodoResponse](#todos.v1.ListTodosRequest) |  |
+| CreateTodo | [CreateTodoRequest](#todos.v1.CreateTodoRequest) | [TodoResponse](#todos.v1.TodoResponse) |  |
+| RemoveTodo | [RemoveTodoRequest](#todos.v1.RemoveTodoRequest) | [TodoResponse](#todos.v1.TodoResponse) |  |
+| GetTodo | [GetTodoRequest](#todos.v1.GetTodoRequest) | [TodoResponse](#todos.v1.TodoResponse) |  |
+| ListTodos | [ListTodosRequest](#todos.v1.ListTodosRequest) | [ListTodoResponse](#todos.v1.ListTodoResponse) |  |
 
  
 
