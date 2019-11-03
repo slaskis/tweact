@@ -3,9 +3,11 @@
 
 package demo
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -16,7 +18,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // TestEnum has a comment
 type Test int32
@@ -33,6 +35,7 @@ var Test_name = map[int32]string{
 	1: "HELLO",
 	2: "THERE",
 }
+
 var Test_value = map[string]int32{
 	"UNKNOWN": 0,
 	"HELLO":   1,
@@ -42,8 +45,9 @@ var Test_value = map[string]int32{
 func (x Test) String() string {
 	return proto.EnumName(Test_name, int32(x))
 }
+
 func (Test) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_service_d66656aa490b70e8, []int{0}
+	return fileDescriptor_b7d63802ce4dc80c, []int{0}
 }
 
 // EchoRequest only passes a message
@@ -58,16 +62,17 @@ func (m *EchoRequest) Reset()         { *m = EchoRequest{} }
 func (m *EchoRequest) String() string { return proto.CompactTextString(m) }
 func (*EchoRequest) ProtoMessage()    {}
 func (*EchoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_d66656aa490b70e8, []int{0}
+	return fileDescriptor_b7d63802ce4dc80c, []int{0}
 }
+
 func (m *EchoRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EchoRequest.Unmarshal(m, b)
 }
 func (m *EchoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EchoRequest.Marshal(b, m, deterministic)
 }
-func (dst *EchoRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EchoRequest.Merge(dst, src)
+func (m *EchoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EchoRequest.Merge(m, src)
 }
 func (m *EchoRequest) XXX_Size() int {
 	return xxx_messageInfo_EchoRequest.Size(m)
@@ -98,16 +103,17 @@ func (m *EchoResponse) Reset()         { *m = EchoResponse{} }
 func (m *EchoResponse) String() string { return proto.CompactTextString(m) }
 func (*EchoResponse) ProtoMessage()    {}
 func (*EchoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_d66656aa490b70e8, []int{1}
+	return fileDescriptor_b7d63802ce4dc80c, []int{1}
 }
+
 func (m *EchoResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EchoResponse.Unmarshal(m, b)
 }
 func (m *EchoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EchoResponse.Marshal(b, m, deterministic)
 }
-func (dst *EchoResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EchoResponse.Merge(dst, src)
+func (m *EchoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EchoResponse.Merge(m, src)
 }
 func (m *EchoResponse) XXX_Size() int {
 	return xxx_messageInfo_EchoResponse.Size(m)
@@ -126,14 +132,14 @@ func (m *EchoResponse) GetMessage() string {
 }
 
 func init() {
+	proto.RegisterEnum("demo.Test", Test_name, Test_value)
 	proto.RegisterType((*EchoRequest)(nil), "demo.EchoRequest")
 	proto.RegisterType((*EchoResponse)(nil), "demo.EchoResponse")
-	proto.RegisterEnum("demo.Test", Test_name, Test_value)
 }
 
-func init() { proto.RegisterFile("demo/service.proto", fileDescriptor_service_d66656aa490b70e8) }
+func init() { proto.RegisterFile("demo/service.proto", fileDescriptor_b7d63802ce4dc80c) }
 
-var fileDescriptor_service_d66656aa490b70e8 = []byte{
+var fileDescriptor_b7d63802ce4dc80c = []byte{
 	// 179 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x4a, 0x49, 0xcd, 0xcd,
 	0xd7, 0x2f, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62,

@@ -1,15 +1,19 @@
 .SUFFIXES:
 
-SOURCE := $(shell find pkg cmd protoc-gen-tweact -name '*.go')
-RPC := $(shell find rpc -name '*.proto')
+SOURCE = $(shell find pkg cmd protoc-gen-tweact -name '*.go')
+RPC = $(shell find rpc -name '*.proto')
+GO_TOOLS = $(shell grep _ tools.go | cut -d\" -f 2)
+GO_TOOLS_DIR = _tools/bin/
+GO_TOOLS_BIN = $(addprefix $(GO_TOOLS_DIR), $(notdir $(GO_TOOLS)))
+
+export PATH:=${PWD}/${GO_TOOLS_DIR}:${PATH}
 
 build: bin/api
 	@: # shhh
 .PHONY: build
 
-
 dev:
-	@retool do CompileDaemon \
+	CompileDaemon \
 		-exclude-dir web \
 		-build make \
 		-command bin/api
@@ -23,23 +27,26 @@ test:
 	@go test ./...
 .PHONY: test
 
-generate: doc vendor _tools/bin/protoc-gen-tweact
-	retool do protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/todos/v1/service.proto
-	retool do protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/demo/service.proto
+generate: doc vendor tools
+	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/todos/v1/service.proto
+	protoc -I pkg:rpc:vendor --lint_out=. --go_out=pkg --twirp_out=pkg --tweact_out=web/rpc rpc/demo/service.proto
 .PHONY: generate
 
-vendor:
-	dep ensure
-.PHONY: vendor
+tools: $(GO_TOOLS_DIR) $(GO_TOOLS_BIN)
+	@:
+.PHONY: tools
 
-_tools/bin/%: $(SOURCE)
-	go build -o $@ $*/main.go
+$(GO_TOOLS_DIR):
+	@mkdir -p $@
+
+$(GO_TOOLS_BIN):
+	GOBIN=${PWD}/${GO_TOOLS_DIR} go install ${GO_TOOLS}
 
 bin/api: $(SOURCE)
-	go build -o $@ cmd/$*/$*.go
+	go build -o $@ cmd/api/api.go
 
 bin/web:
 	cd web && yarn build && yarn pkg
 
 doc/index.html: $(RPC)
-	retool do protoc -I pkg:rpc:vendor --doc_out=./doc --doc_opt=markdown,index.md $^
+	protoc -I pkg:rpc:vendor --doc_out=./doc --doc_opt=markdown,index.md $^
